@@ -13,12 +13,24 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 
 ## The game
 
-Two rows to start with; the game adds a row for every term its specification names.
+The game adds a row for every term its specification names. The Sudoku terms are
+`sudoku.allium`'s, which picks one word where the game's literature has several.
 
 | Term | Meaning |
 | --- | --- |
 | Player | Whoever is at the device. One at a time, and nothing here knows of a second. |
 | Play surface | Where Pawdoku is played: the platform's cells and keys in an arrangement this game decides. `Play` is its name in the root module. |
+| Puzzle | One game of Sudoku: a grid, the givens its setter supplied, and whether it is solved. |
+| Setter | Whoever or whatever supplies a puzzle's givens. The rules say what it may pose, never how it finds one. |
+| Cell | One position of the grid, at a row and a column, holding a digit or empty. A rules concept: the platform's play cell is what draws one. |
+| Digit | 1 to 9. The only thing a cell holds. |
+| Box | One of the nine 3 by 3 squares that tile the grid. Never block, region or subgrid. Its band counts boxes from the top and its stack from the left. |
+| Unit | A row, a column or a box: nine cells that must end up holding nine different digits. |
+| Peer | Another cell sharing a unit with this one. |
+| Given | A digit the setter wrote in before play. The player can never change it. Never clue. |
+| Well-posed | Having exactly one solution. Every puzzle a setter may pose is. Never proper. |
+| Conflict | Two peers holding the same digit. The rules permit it and both cells are in it. |
+| Solved | Every cell holds a digit and none conflicts. Final: a solved puzzle takes no more moves. |
 
 ## The repository
 

@@ -8,15 +8,16 @@ requires: []
 
 # Work with the specifications
 
-The Allium modules under `docs/specs/` decide what the game does; a fresh game has one, the
-root module named after its slug. This page is the procedure;
+The Allium modules under `docs/specs/` decide what the game does: the root module named
+after its slug, and the modules the game adds beside it. This page is the procedure;
 [Specifications](../explanation/specifications.md) is the reasoning.
 
 ## Find the module that owns the behaviour
 
 | Module | Owns |
 | --- | --- |
-| `<slug>.allium`, the root module | The six figures the platform also states, and the `Play` surface with its one guarantee. Every module the game adds imports this one. |
+| `<slug>.allium`, the root module | The six figures the platform also states, and the `Play` surface with its one guarantee. A module that needs a figure or the `Play` surface imports this one. |
+| `sudoku.allium` | The rules of classic Sudoku and nothing about how they look: the grid, its units and peers, what a setter may pose, the two moves a player has, conflicts, and when a puzzle is solved. It imports nothing; a module that draws the rules imports it and the root. |
 
 Each module opens with `Scope`, `Includes` and `Excludes`. If your change falls under
 another module's `Excludes`, it belongs there.
