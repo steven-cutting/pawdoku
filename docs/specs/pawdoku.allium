@@ -1,0 +1,87 @@
+-- allium: 3
+--
+-- Pawdoku — the game
+--
+-- Scope
+--   The root module of this game's specification. It states the figures the
+--   platform also states, so the gate can hold the two equal, and one surface
+--   with one guarantee, so the specification is checked rather than merely
+--   present. What the game is, how it starts and how it ends is still to be
+--   specified — here, or in modules that import this one.
+--
+-- Includes
+--   - The six figures @steven-cutting/biscuit-games states in
+--     appearance.allium, operation.allium and play-surfaces.allium, restated
+--     under the same names so tests/platformSpecs.test.ts can hold each equal
+--     to the shipped text and to src/lib/config.ts.
+--   - The Play surface: the one surface the game has before it has a game,
+--     and the width it has to lay out in.
+--
+-- Excludes
+--   - Play. Rules, entities, outcomes and what any mark means belong to the
+--     modules the game adds; this one names none of them.
+--   - Colour values, markup and mechanics. The figures below are thresholds a
+--     rendering either meets or does not, and they name no colour.
+--
+-- Dependencies
+--   None. This is the root module. Allium has no cross-repository import, so
+--   the platform's three modules are held equal by test rather than imported.
+
+------------------------------------------------------------
+-- Given
+------------------------------------------------------------
+
+given {
+    -- How wide the surface has to lay out in, in CSS pixels. The device
+    -- decides it and the game only ever lays out to it.
+    viewport_width: Integer
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    -- Contrast ratios, as WCAG 2.2 computes them: the AA bar for text and
+    -- the AA bar for anything that is not text. Stated by the platform in
+    -- appearance.allium, which @steven-cutting/biscuit-games ships, and held
+    -- equal to it by tests/platformSpecs.test.ts.
+    minimum_text_contrast: Decimal = 4.5
+    minimum_boundary_contrast: Decimal = 3.0
+
+    -- CSS pixels across a control, in both directions, and the narrowest
+    -- viewport every figure has to survive. Stated by the platform in
+    -- operation.allium and held equal by tests/platformSpecs.test.ts.
+    minimum_touch_target: Integer = 44
+    narrowest_supported_width: Integer = 320
+
+    -- How far an unmarked cell sits from a marked one, and absent from exact.
+    -- Stated by the platform in play-surfaces.allium and held equal by
+    -- tests/platformSpecs.test.ts.
+    minimum_state_separation: Decimal = 3.0
+    minimum_mark_separation: Decimal = 2.0
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+-- Where the game is played. Today it carries nothing but the platform's
+-- chrome and the room the game will take; every surface the game adds is
+-- reached from here.
+surface Play {
+    let within_supported_width = viewport_width >= config.narrowest_supported_width
+
+    exposes:
+        within_supported_width
+
+    @guarantee EveryFigureHoldsAtTheNarrowestWidth
+        -- Every control on this surface is at least config.minimum_touch_target
+        -- across in both directions; its text reaches
+        -- config.minimum_text_contrast against what is behind it and its
+        -- boundary config.minimum_boundary_contrast against the page; a marked
+        -- cell stands off an unmarked one by config.minimum_state_separation
+        -- and absent stands off exact by config.minimum_mark_separation. All
+        -- of it holds down to config.narrowest_supported_width, at which
+        -- nothing scrolls sideways.
+}

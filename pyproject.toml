@@ -1,0 +1,72 @@
+[project]
+name = "pawdoku-tooling"
+version = "0.1.0"
+description = "Repository tooling for Pawdoku. Not the application; see package.json for that."
+requires-python = ">=3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "biscuit-games-tooling @ git+https://github.com/steven-cutting/biscuit_games_tooling@v0.2.0",
+  "prek==0.4.12",
+  "ruff==0.16.2",
+]
+
+[tool.uv]
+# This game ships no Python package. This project exists so `uv run --frozen`
+# can provide a pinned prek, ruff and biscuit-games-tooling to the hooks and
+# recipes; see docs/decisions/0004-python-toolchain.md.
+package = false
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 99
+target-version = "py314"
+unsafe-fixes = false
+src = ["scripts"]
+
+[tool.ruff.lint]
+select = [
+  "A", "ANN", "ARG", "B", "BLE", "C4", "COM", "DTZ", "E",
+  "EM", "EXE", "F", "FA", "FLY", "FURB", "G", "I", "INP", "INT",
+  "ISC", "LOG", "N", "PERF", "PGH", "PIE", "PL", "PTH", "PYI",
+  "Q", "RET", "RSE", "RUF", "S", "SIM", "SLF", "T10", "TC",
+  "TID", "TRY", "UP", "W",
+]
+ignore = ["COM812", "E501", "ISC001"]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+# These are single-file command-line checkers: they print, they take no
+# annotations beyond their own signatures, and they shell out to git by design.
+"scripts/**" = [
+  "ANN", "BLE001", "EM101", "EM102", "INP001", "PLR0912", "PLR0915",
+  "PLR2004", "S404", "S603", "S607", "T201", "TRY003",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.typos.files]
+# Lockfiles carry hashes that look like typos.
+extend-exclude = [
+  "package-lock.json",
+  "uv.lock",
+]
+
+[tool.biscuit-games-tooling]
+# What `just check` runs, in order, before `check-clean`. This is the package's
+# default; it is written out so a game that adds a gate appends to it.
+recipes = [
+  "lock-check", "lint", "frontend-static", "frontend-coverage", "frontend-build",
+  "storybook-build", "storybook-test", "check-docs", "check-agents", "check-specs",
+  "analyse-specs",
+]
+# Predicates a page's `requires` may name, true when enabled. None yet.
+predicates = {}

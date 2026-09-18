@@ -1,0 +1,109 @@
+---
+title: "Documentation contract"
+kind: "reference"
+audience: [contributor, maintainer, agent]
+canonical_for: [documentation_contract]
+requires: []
+---
+
+# Documentation contract
+
+Enforced by `bg-validate-docs`, a console script of the `biscuit-games-tooling` package,
+run by `just check-docs` and by a pre-commit hook. It reports every violation at once
+rather than stopping at the first.
+
+The contract exists so documentation cannot quietly rot: every page is registered once,
+owns its topics, repeats its metadata in frontmatter, and is reachable from the index.
+
+## The manifest
+
+`docs/manifest.yml` is the index, and it is parsed as strict JSON despite the extension —
+JSON is a subset of YAML. No trailing commas, no comments.
+
+```json
+{"path": "reference/commands.md", "title": "Commands", "kind": "reference",
+ "audience": ["contributor", "maintainer", "operator", "agent"],
+ "canonical_for": ["command_reference"], "requires": []}
+```
+
+Every entry carries exactly those six keys — extra keys fail as loudly as missing ones.
+
+## Frontmatter
+
+Every page carries exactly five keys, and each must equal the manifest entry.
+
+```markdown
+---
+title: "Commands"
+kind: "reference"
+audience: [contributor, maintainer, operator, agent]
+canonical_for: [command_reference]
+requires: []
+---
+```
+
+Two things catch people out. Lists must be inline (`[a, b]`), because the parser is
+hand-rolled and does not accept block sequences. And the comparison is **order-sensitive**
+— `[maintainer, contributor]` against a manifest saying `["contributor", "maintainer"]`
+fails.
+
+## The rules
+
+| Field | Constraint |
+| --- | --- |
+| `kind` | One of `project`, `tutorial`, `how-to`, `explanation`, `reference`, `operations`, `decision`. |
+| `audience` | Non-empty subset of `user`, `contributor`, `maintainer`, `operator`, `agent`. |
+| `canonical_for` | At least one topic, and every topic is owned by exactly one page across the whole tree. |
+| `requires` | Feature predicates. This project defines none, so every page carries `[]`. |
+
+Beyond the fields:
+
+- The body's **first heading is level one and its text equals the `title`** exactly.
+- The body has at least **forty words**.
+- No unresolved template delimiters, no unfinished markers, no placeholder prose.
+- Every relative link resolves, with **exact case** — which is what catches mistakes on a
+  case-insensitive filesystem — and any `#fragment` matches a real heading anchor.
+- Every page is **reachable from `docs/README.md`** by following links. Adding a page
+  without linking it in fails, even when everything else is correct.
+- Nothing under `docs/` may exist unregistered, and nothing registered may be absent.
+
+Only `docs/**/*.md` is in scope. The Allium specifications are not Markdown, so the
+contract does not see them; they are still valid link targets.
+
+## Links that leave the repository
+
+One page points outward: [The platform upstream](../project/platform.md) carries the links
+into the Biscuit Games handbook. They are `https://…/blob/main/docs/<path>` URLs to whole
+pages, never to a heading — a fragment across the boundary is checked by nothing on either
+side, and a heading renamed there would rot here silently either way.
+
+The validator and the offline link checker both skip an `https://` target, so nothing in
+`just check` resolves them. `just check-links-online` does, by hand and monthly.
+
+## Managed and seed pages
+
+This game was rendered from the Biscuit Games template, and every page under `docs/`
+is on one side of that line. A managed page is the template's: `copier update`
+re-renders it and merges the template's changes into it three-way, so an edit made
+here survives until the template changes the same lines, and is best made in the
+template when it would suit every game. A seed page is this game's: the two project
+pages that say what it is, every decision record and every specification module are
+rendered once by `copier copy` and never merged, recreated or deleted by an update. The
+manifest and [the documentation map](../README.md) are managed but expected to be
+edited here, which is why a page this game adds is registered after the last decision
+and linked under the map's final section: the template inserts above, the game appends
+below, and the two never touch the same lines.
+[Update from the template](../how-to/update-from-template.md) lists both sets.
+
+## Outside the contract
+
+`README.md`, `SECURITY.md`, `CHANGELOG.md`, `AGENTS.md` and `CLAUDE.md` at the repository
+root carry no frontmatter and are not in the manifest. They are still checked by
+markdownlint, `typos` and the link checker. `AGENTS.md` has its own validator; see
+[Agent contract](agent-contract.md).
+
+## Related pages
+
+- [Agent contract](agent-contract.md)
+- [Quality gates](quality-gates.md)
+- [Documentation map](../README.md)

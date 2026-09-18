@@ -1,0 +1,50 @@
+name: Chromatic
+
+# Visual review of the component workshop. It lives apart from `ci.yml` for the
+# same reason the Pages deploy does: it holds a secret nothing else holds, and it
+# answers to triggers the gate has no use for. It is not a required check.
+
+on:
+  # The baseline. `chromatic.config.json` auto-accepts on this branch, so what
+  # lands on main becomes what later builds are compared against.
+  push:
+    branches: ['main']
+  # Review on demand: comment `/chromatic` on a pull request. GitHub runs an
+  # `issue_comment` workflow from the default branch's copy of this file, so the
+  # trigger does nothing until it has been merged.
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # A pull request's conversation is an issue, and both names are load-bearing.
+  # The reaction and the reply are `issues/*` endpoints, so `issues: write` is
+  # the one the paths ask for — but the resource they touch is a pull request,
+  # and that is what the token is weighed against. A token holding
+  # `issues: write` and `pull-requests: read` was refused the reaction with a
+  # 403. Write here subsumes the read `gh pr view` needs to resolve the commit a
+  # comment is asking about.
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: chromatic-${{ github.event.issue.number || github.ref }}
+  # Supersede a review run, never a baseline: a cancelled push to main is a
+  # baseline that did not advance.
+  cancel-in-progress: ${{ github.event_name == 'issue_comment' }}
+
+jobs:
+  chromatic:
+    # The union of what the called jobs hold: the publish job also reads
+    # the platform package.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      packages: read
+    uses: steven-cutting/biscuit_games_tooling/.github/workflows/game-chromatic.yml@be41556ff01d00aba77cfac4c34f9727b8580bd6 # v0.1.0
+    # Optional. Unset, the called workflow notes its absence and skips the
+    # publish, and the run stays green.
+    secrets:
+      CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}

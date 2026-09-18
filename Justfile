@@ -1,0 +1,164 @@
+set positional-arguments := true
+set shell := ["sh", "-eu", "-c"]
+
+# Storybook phones home unless told not to, and `just check` runs it. The core
+# preset in .storybook/main.ts is the primary lever; this is the belt.
+export STORYBOOK_DISABLE_TELEMETRY := "1"
+
+default:
+    @just --list
+
+# ------------------------------------------------------------------ setup ---
+
+# One explicit first-run command. Never stages, commits, tags, or pushes.
+initialize:
+    sh scripts/initialize.sh
+
+sync:
+    uv sync --frozen
+    test -f package-lock.json || { printf '%s\n' 'package-lock.json is missing; run just initialize first' >&2; exit 2; }
+    npm ci --no-audit
+
+lock:
+    uv lock
+    npm install --package-lock-only --ignore-scripts --no-audit
+
+lock-upgrade:
+    uv lock --upgrade
+    npm update --package-lock-only --ignore-scripts --no-audit
+
+lock-check:
+    uv lock --check
+    npm ci --ignore-scripts --dry-run --no-audit
+
+install-hooks:
+    git rev-parse --is-inside-work-tree >/dev/null
+    test -f uv.lock || { printf '%s\n' 'uv.lock is missing; run just initialize first' >&2; exit 2; }
+    uv run --frozen prek install --overwrite --hook-type=pre-commit
+
+# The Allium checker for docs/specs/, pinned and checksummed in the tooling
+# package. Downloads over the network into .tools/bin, which Git ignores. It is
+# not part of `just sync` for the same reason the browser below is not: sync
+# installs exactly what the lockfiles say, and no lockfile can name a binary.
+install-allium:
+    uv run --frozen bg-install-allium
+
+# The Chromium build the story tests render in. Downloads over the network into
+# a per-user cache outside the repository, so the worktree never sees it.
+# `just initialize` runs this; `just sync` deliberately does not, because sync
+# installs exactly what the lockfiles say and no lockfile names a browser.
+storybook-browsers:
+    npm run storybook:browsers
+
+# Linux only: an apt front end for the libraries Chromium links against. CI runs
+# it; macOS has nothing to add.
+storybook-browsers-deps:
+    npm run storybook:browsers:deps
+
+# ---------------------------------------------------------------- develop ---
+
+dev:
+    npm run dev
+
+# Serves the build in build/. BASE_PATH decides the mount as well as the build,
+# so pass the same value here that the build used.
+preview:
+    npm run preview
+
+# The component workshop on port 6006. This serves it; `just chromatic` is what
+# publishes a build of it for visual review.
+storybook:
+    npm run storybook
+
+# ----------------------------------------------------------------- format ---
+
+format:
+    uv run --frozen ruff check --fix-only .
+    uv run --frozen ruff format .
+    npm run format
+
+fix:
+    -uv run --frozen prek run --all-files --config .pre-commit-fix.yaml
+    uv run --frozen prek run --all-files --config .pre-commit-fix.yaml
+    npm run lint:fix
+    just lint
+
+# ------------------------------------------------------------------ check ---
+
+lint:
+    uv run --frozen prek run --all-files
+
+frontend-static:
+    npm run lint
+    npm run check
+
+frontend-unit:
+    npm run test
+
+frontend-coverage:
+    npm run coverage
+
+frontend-build:
+    npm run build
+
+# Builds the workshop, autodocs included, into the gitignored storybook-static/.
+# This is the only gate that renders the documentation pages.
+storybook-build:
+    npm run storybook:build
+
+# Every story in real Chromium: axe over each render, play functions executed as
+# interaction tests. It checks for the browser first, so a missing download
+# reports itself as a missing download rather than as a failing story. Never
+# measured for coverage — the floor over src/lib/** stays a claim about tests/.
+storybook-test:
+    npm run storybook:test
+
+# --------------------------------------------------------------- documents ---
+
+check-docs:
+    uv run --frozen prek run --all-files markdownlint-cli2 typos lychee
+    uv run --frozen bg-validate-docs
+
+check-agents:
+    uv run --frozen bg-validate-agents
+
+# The specifications, checked mechanically rather than by review: syntax,
+# references, and names a module reaches for that no import defines. Every
+# module must report an empty `diagnostics` array; anything reported is a
+# regression. Waiver terms: docs/how-to/work-with-the-specs.md.
+#
+# The wrapper is what asserts that, because neither subcommand's exit code
+# does. `allium check` exits 0 on an `info` diagnostic and `allium analyse`
+# ignores diagnostics altogether, so both recipes read the JSON instead of
+# trusting the status. Both need the pinned binary, which `just initialize`
+# installs and `just install-allium` repairs.
+check-specs:
+    uv run --frozen bg-run-allium check
+
+# The same modules read for process completeness rather than structure: data
+# flow, reachability, deadlocks, conflicts and invariants. It repeats everything
+# `check-specs` reports and adds findings of its own, and findings cannot be
+# waived, so anything reported is a regression.
+analyse-specs:
+    uv run --frozen bg-run-allium analyse
+
+check-links-online:
+    uv run --frozen prek run --all-files --hook-stage manual lychee-online
+
+# ---------------------------------------------------------------- aggregate ---
+
+check-clean baseline="":
+    uv run --frozen bg-project-check clean "$1"
+
+# The complete gate.
+check:
+    uv run --frozen bg-project-check run
+
+# ---------------------------------------------------------------- publish ---
+
+# Publishes the workshop to Chromatic for visual review, building it on the way.
+# Needs the network and CHROMATIC_PROJECT_TOKEN, so it is deliberately outside
+# `just check` — the same reason check-links-online sits outside it. Pass a
+# branch name when HEAD is detached, which is how CI reaches a pull request.
+chromatic branch="":
+    npm run chromatic -- ${1:+--branch-name "$1"}

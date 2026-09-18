@@ -1,0 +1,19 @@
+<!doctype html>
+<!--
+  data-theme="dark" is `default AppearanceSettings appearance_settings` from
+  the platform's appearance.allium, which @steven-cutting/biscuit-games ships,
+  stated in the markup so the prerendered page paints the default before
+  anything hydrates. A route that lets the player choose writes their choice
+  over it: `light` replaces it, `system` removes it.
+-->
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

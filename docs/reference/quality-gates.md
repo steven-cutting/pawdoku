@@ -1,0 +1,177 @@
+---
+title: "Quality gates"
+kind: "reference"
+audience: [contributor, maintainer, agent]
+canonical_for: [quality_gate_reference]
+requires: []
+---
+
+# Quality gates
+
+`just check` runs the gates in the order below and snapshots the worktree between each
+one. A recipe that modifies a file Git does not ignore fails the run, because checks are
+read-only; an ignored path is outside the snapshot, which is why every build output below
+is ignored.
+
+| Order | Gate | Proves |
+| --- | --- | --- |
+| 1 | `lock-check` | Both manifests agree with both lockfiles. |
+| 2 | `lint` | The whole hook gate passes over every file. |
+| 3 | `frontend-static` | ESLint, Prettier and `svelte-check --fail-on-warnings` are clean. |
+| 4 | `frontend-coverage` | Every test passes and coverage is at or above the floor. |
+| 5 | `frontend-build` | The site actually builds, with every route prerenderable. |
+| 6 | `storybook-build` | The workshop builds, documentation pages included. The one gate that reaches the network — see below. |
+| 7 | `storybook-test` | Every story renders in Chromium, passes axe, and its play function completes. |
+| 8 | `check-docs` | The documentation contract holds. |
+| 9 | `check-agents` | The agent contract holds. |
+| 10 | `check-specs` | Every specification reports an empty `diagnostics` array. |
+| 11 | `analyse-specs` | Every specification reports an empty `findings` array too. |
+| 12 | `check-clean` | The run changed nothing. |
+
+Gates 10 and 11 cost the gate something real: the pinned `allium` binary lives in the
+gitignored `.tools/bin/`, which is a per-worktree install, so a worktree that has never
+run `just initialize` fails `just lint` and `just check` until `just install-allium`
+puts one there. The alternative was a gate that skipped itself whenever its tool was
+absent, which asserts nothing.
+[Decision 0007](../decisions/0007-project-managed-allium-cli.md) is the record.
+
+Neither gate trusts the tool's exit code, because neither exit code means what this
+project means by clean. `allium check` exits 0 on an `info` diagnostic —
+`allium.field.unused` is one — and `allium analyse` keys its status on findings alone and
+ignores diagnostics entirely, so a module that does not parse passes it with the `error`
+sitting in the JSON it has just printed. `bg-run-allium` runs the subcommand,
+prints its output whole, and asserts what the contract actually says: every module reports
+an empty `diagnostics` array and an empty `findings` array. A diagnostic may be waived
+only where the checker itself is wrong, on the terms in
+[Work with the specifications](../how-to/work-with-the-specs.md); a finding cannot be
+waived at all.
+
+One check is still deliberately missing from the table. `check-links-online` needs the
+network, and a check that can fail because a third party is down is not a gate. It is
+listed in [Commands](commands.md).
+
+One gate in the table does reach the network, and it is stated here rather than left to be
+discovered. `.storybook/main.ts` composes the platform's published workshop through a
+`refs` entry, and Storybook checks a ref while it builds by fetching that address's
+`iframe.html`. So gate 6 reaches out on every run of `just check`: once for that file, and
+a second time for the same file read as JSON, which is how Storybook tells a workshop from
+a login page. An address that does not answer costs the first request alone.
+
+It cannot fail on it. An address Storybook cannot reach is recorded as a ref of unknown
+type and the build carries on — verified by pointing the entry at a host that does not
+resolve, which produced a completed build and a sidebar entry that does not open. What an
+outage costs is the platform's stories being absent from this game's sidebar, and a wait as
+long as the connection takes to give up. Gate 7 is unaffected, because Storybook skips ref
+checking under its test runner.
+
+The composition was taken for convenience rather than correctness, which is why it is worth
+naming what it costs. Removing the `refs` block is the whole of undoing it.
+[Decision 0008](../decisions/0008-design-system-as-a-package.md) is why it was taken.
+
+Storybook writes a cache and a static build, and Vitest's browser mode can write failure
+screenshots. All of them are ignored by Git, because a gate that changes one byte of the
+worktree fails before its own exit code is read. Gate 7 needs a browser that no lockfile
+accounts for; see [Work in the component workshop](../how-to/work-in-the-component-workshop.md).
+
+## What the hook gate contains
+
+`just lint` runs `.pre-commit-config.yaml` over every file. This is the read-only
+configuration, and it is the one installed as the pre-commit hook.
+
+| Hook | Checks |
+| --- | --- |
+| `ruff-check`, `ruff-format-check` | Any Python file the game adds; none ships. |
+| `editorconfig-checker` | Whitespace, line endings, final newlines. |
+| `eslint` | ESLint and `prettier --check` across the application, the stories, and the workshop configuration. |
+| `validate-docs`, `validate-agents` | The two contracts, so a hook catches them before the aggregate does. |
+| `check-specs`, `analyse-specs` | The specifications, through `allium`. Needs the pinned binary; see above. |
+| `markdownlint-cli2` | Markdown structure. Prettier does not touch Markdown, so they cannot disagree. |
+| `typos` | Spelling, excluding the lockfiles. |
+| `lychee` | Link targets, offline. |
+| `shellcheck` | `scripts/initialize.sh`. |
+| `actionlint` | Every GitHub Actions workflow, its structure only — see below. |
+| `ripsecrets` | Credential material, with its output suppressed so a match is never logged. |
+| Builtin `check-*` | Large files, case conflicts, merge markers, JSON, TOML, YAML, private keys, shebangs. |
+
+Third-party hooks are pinned to commit SHAs with a version comment beside each.
+
+One gap is worth knowing about rather than being surprised by. `actionlint` analyses a
+`run:` block by handing it to `shellcheck`, and it reports nothing at all when it cannot
+find `shellcheck` on its own `PATH`. Under `prek` each hook gets its own environment, so
+the `shellcheck` hook two rows up is not the one `actionlint` can see, and the shell
+embedded in a workflow goes unread. This game's workflows carry no such shell now: the
+three `run:` blocks longer than a line, the `/chromatic` gate, the token check and the
+reply on the pull request, run from `game-chromatic.yml` in
+`steven-cutting/biscuit_games_tooling`, which checks each by extracting it and running
+`shellcheck` over it by hand. A block of more than a line added to a workflow here deserves
+the same treatment until the gap is closed.
+
+## The mutating counterpart
+
+`.pre-commit-fix.yaml` holds the hooks that write: Ruff autofix and format,
+end-of-file and trailing-whitespace repair, and `markdownlint --fix`. It is never
+installed as a hook and runs only from `just fix`.
+
+## In continuous integration
+
+`.github/workflows/ci.yml` runs the same recipes in three jobs, from a workflow every game
+shares: its one job, `ci`, calls `game-ci.yml` in `steven-cutting/biscuit_games_tooling` at
+a pinned release. `frontend` runs the
+install, `lock-check`, `frontend-static`, `frontend-coverage` and `frontend-build`;
+`documents` runs `sync`, then `install-allium` — the binary no lockfile can name — then
+`lint`, `check-docs`, `check-agents`, `check-specs` and `analyse-specs`; `stories`
+restores the Playwright cache, installs the browser, then runs `storybook-build` and `storybook-test`.
+Past installing Python, `just` and npm themselves, which that repository's
+`setup-toolchain` action does, nothing in CI runs a command that does not exist in the
+`Justfile`. The workshop build the gate makes is proved and then
+discarded: that one is uploaded nowhere.
+
+Every job that installs authenticates to GitHub Packages for the design system, with the
+token GitHub mints for the run rather than anything stored: `actions/setup-node` is given
+the registry and the `@steven-cutting` scope, and the environment variable goes on each
+installing step rather than on the job. `ci.yml` carries `packages: read` at the workflow
+level because all three of its jobs install. `pages.yml` and `chromatic.yml` carry it on
+the job that calls the shared workflow, because a called workflow can narrow the token it
+is handed but never widen it; inside, the one job in each that installs keeps the scope
+and the other gives it up.
+
+A separate workflow uploads a different one. `.github/workflows/chromatic.yml` runs
+`just chromatic`, which builds the workshop again and publishes it for visual review; see
+[decision 0006](../decisions/0006-visual-review-in-chromatic.md). It is a workflow rather
+than a fourth `ci.yml` job because it holds a secret nothing else holds and answers to
+triggers the gate has no use for: a push to `main`, which sets the baseline, and a
+`/chromatic` comment on a pull request, which publishes that branch for review. The comment
+publishes for a commenter with write permission or better, and only for a branch in this
+repository; the checks and what they are for are in
+[the security model](../explanation/security-model.md).
+
+## On `main`
+
+`main` is protected, and `ci / frontend`, `ci / documents` and `ci / stories` must all pass
+before a branch merges into it. Those three names are the CI jobs, each named after the
+calling job in `ci.yml` and then the shared job it runs, and they are the only required
+checks: the Pages workflow's own jobs never run on a pull request, so requiring them would
+block every merge. Chromatic is not among them either, and deliberately so — a visual
+change is a thing to look at, not a thing to fail on, so the job reports and passes.
+
+The branch is not required to be up to date with `main` first, and no review is required —
+neither earns its cost on a repository with one author. Force pushes and deletion are
+refused. Administrators are not bound by the rule, so the direct push remains available
+when it is genuinely wanted; the protection is there to stop an unproved merge, not to stop
+the author.
+
+The gate is on the merge, not on the deployment. `.github/workflows/pages.yml` deploys on
+every push to `main`, in parallel with CI rather than behind it, so what the protection
+buys is narrower than it sounds: an unproved branch cannot become `main` through a pull
+request. Two paths still publish ahead of a green run. One is the administrator pushing
+directly. The other is an ordinary merge, because the branch is not required to be up to
+date first — three green checks are green for the branch, not for the `main` the merge
+produces. In both cases the deployment and the CI run start together, so watch the run and
+roll back if it is red.
+
+## Related pages
+
+- [Commands](commands.md)
+- [Quality philosophy](../explanation/quality-philosophy.md)
+- [Documentation contract](documentation-contract.md)
+- [Agent contract](agent-contract.md)

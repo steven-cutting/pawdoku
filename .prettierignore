@@ -1,0 +1,21 @@
+.svelte-kit
+build
+coverage
+node_modules
+package-lock.json
+storybook-static
+
+# Markdown belongs to markdownlint-cli2. Two formatters over the same files
+# disagree eventually, and `just fix` runs markdownlint before Prettier, so the
+# disagreement would surface as a gate that never converges.
+*.md
+
+# The manifest is strict JSON despite the extension, because validate_docs.py
+# parses it with json.loads. Prettier reads the .yml and rewrites it as YAML
+# with single quotes, which is no longer JSON and fails the contract outright.
+docs/manifest.yml
+
+# Copier owns the answers file and rewrites it on every `copier update`.
+# Prettier would reformat YAML it does not own, so without this line
+# `prettier --check` and the regenerated file fight after every update.
+.copier-answers.yml

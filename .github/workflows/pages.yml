@@ -1,0 +1,39 @@
+name: Deploy to GitHub Pages
+
+# Publishing needs write scopes that no other workflow here has, so the deploy
+# lives in its own file rather than as a job on the end of CI.
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one that is already running: a
+# half-published site is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    # The union of what the called jobs hold: the build reads the platform
+    # package, the deploy publishes.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      packages: read
+    uses: steven-cutting/biscuit_games_tooling/.github/workflows/game-pages.yml@be41556ff01d00aba77cfac4c34f9727b8580bd6 # v0.1.0
+    with:
+      # A project site: Pages serves the build at
+      # <owner>.github.io/<repository>/, so the app is built to live under that
+      # path. The name is read from the event rather than written here, which is
+      # what keeps this file the same in every game and keeps `paths.base` in
+      # svelte.config.js from drifting away from the address Pages actually
+      # serves.
+      base_path: /${{ github.event.repository.name }}

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    # Quoted because a branch named `true`, `false`, `null`, `on`, or `1.0` is
+    # valid to Git but is not a string to a YAML 1.1 parser.
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Every job installs @steven-cutting/biscuit-games from GitHub Packages
+  # with the run's own token. A permission is not a secret: nothing is
+  # stored on this repository for it.
+  packages: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The three jobs every game runs, `frontend`, `documents` and `stories`, come
+  # from the shared workflow, and each check is named after this job and then
+  # its own: `ci / frontend`, `ci / documents` and `ci / stories` are what
+  # `main` requires.
+  ci:
+    uses: steven-cutting/biscuit_games_tooling/.github/workflows/game-ci.yml@be41556ff01d00aba77cfac4c34f9727b8580bd6 # v0.1.0

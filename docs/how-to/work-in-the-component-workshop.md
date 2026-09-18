@@ -1,0 +1,200 @@
+---
+title: "Work in the component workshop"
+kind: "how-to"
+audience: [contributor, maintainer, agent]
+canonical_for: [component_workshop]
+requires: []
+---
+
+# Work in the component workshop
+
+The workshop is Storybook, served locally. It renders one component at a time, in every
+state its surface names, in either palette, with the accessibility check running as you
+go. It is where the remaining surfaces get built. Why it exists is in
+[Decision 0005](../decisions/0005-component-workshop.md).
+
+## Run it
+
+```console
+just storybook
+```
+
+The workshop opens on port 6006 with hot module replacement, the same as `just dev`.
+
+To render every story in Chromium and run axe over each one:
+
+```console
+just storybook-test
+```
+
+The same run is available from the workshop itself: **Run tests** at the foot of the
+sidebar, with interactions, coverage and accessibility as separate toggles, marks each story
+in the sidebar as it finishes. It is the same story suite the recipe runs — the panel starts
+its own Vitest, which is why `vitest.config.ts` exists — but `just check` reads the recipe,
+so the button is for working, not for evidence.
+
+Both `just storybook-build` and `just storybook-test` are part of `just check`, so a story
+that stops rendering, or a component that picks up an accessibility violation, fails the
+gate rather than waiting to be noticed.
+
+## Install the browser
+
+The story run needs a real Chromium, which is in neither lockfile.
+
+```console
+just storybook-browsers
+```
+
+This downloads a browser over the network into a cache outside the repository. It is the
+one thing here that cannot run offline at all. `just initialize` does it for you; run it
+again by hand after the `playwright` pin moves. On Linux, `just storybook-browsers-deps`
+installs the system libraries Chromium links against.
+
+## The platform's workshop, beside this one
+
+`.storybook/main.ts` carries a `refs` entry for the platform's published workshop, so its
+components — and the token sheet the platform keeps — appear under **Biscuit Games** in the
+sidebar, collapsed, below this game's own. They are served from where the platform
+publishes them; nothing is built here.
+
+Storybook checks the address while it builds, so `just storybook-build` reaches the network
+on every run of the gate — and cannot fail on it, because an unreachable address becomes an
+entry that does not open rather than an error. What that costs, and the exception it makes
+to the gate, are in [Quality gates](../reference/quality-gates.md); the story run never
+fetches at all.
+
+## Where stories live
+
+Stories live in `stories/` at the repository root, one file per component. The layout rule
+and what the story run proves are in [Testing](../reference/testing.md).
+
+Every file here covers one component this game owns. The design tokens have a specimen sheet
+of their own, and it is the platform's rather than this repository's — the tokens are
+consumed by every component and owned by none of them. What each pair of them measures is
+held by the platform's own test, not by one here.
+
+## Write a story
+
+Svelte CSF means the story file is itself a Svelte component. Call `defineMeta` in a module
+script, destructure the `Story` component out of what it returns, and write one `Story`
+element per state.
+
+```svelte
+<script module lang="ts">
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Lockup from '../src/lib/components/Lockup.svelte';
+
+  const { Story } = defineMeta({ title: 'Brand/Lockup', component: Lockup, tags: ['autodocs'] });
+</script>
+
+<!-- The comment above a story becomes its description on the docs page. -->
+<Story name="Beside the platform's words" />
+```
+
+Imports reach into `src/` with a relative path, matching `tests/`.
+
+Four rules on top of the format:
+
+1. **Name the states the surface names.** A story set is a reading of the specification, so
+   cover the states `docs/specs/` says the surface has, and say which surface and which
+   `@guarantee` clauses it stands for. Cite them by name; the words live in one place.
+2. **A story is a fixture, not an assertion.** The evidence still lives in `tests/`, and the
+   coverage floor is still earned there.
+3. **Inject port fakes, never touch a browser global.** The story run is a real browser, so
+   `localStorage` and the clipboard exist and would work. That is exactly why the rule
+   holds: construct the component against the fakes in `src/lib/ports/`, which `tests/`
+   uses too, and the two the platform package ships, `createFakePreferences` and
+   `createFakeKeys`.
+4. **Reach for a play function when the guarantee is about interaction.** A story that tabs
+   to a key and activates it is executable evidence for `FullyKeyboardOperable` in a way a
+   rendered picture is not.
+
+A story that needs composition — a wrapper, a sibling, children of its own — either sets
+`asChild` and supplies children, which ignores args, or supplies a snippet named `template`,
+which receives the args and the story context. The addon's own documentation covers both.
+
+## Switch theme, contrast and motion
+
+The toolbar carries four globals. Theme and high contrast set `data-theme` and
+`data-high-contrast` on the preview's root element, which is what the design system's
+stylesheet keys on, so a story sees the tokens the application will. The animations
+setting and reduced motion decide `data-animations` between them, and the device wins: the
+attribute is written only while animations are on and motion is not reduced. A story pins
+a value with a `globals` prop, which beats the toolbar and disables the matching control.
+
+Reduced motion is a simulation, labelled as one: it freezes declarative motion in the
+preview but cannot make the browser report the preference, and a fresh game has none.
+
+Check both palettes before you finish. Colour never carries meaning alone here, and high
+contrast changes which colours carry it — see
+[Accessibility](../explanation/accessibility.md).
+
+## When the accessibility check fails
+
+The accessibility panel names the axe rule that failed and the node that failed it. The
+story run fails on a violation because `.storybook/preview.ts` sets the addon's test mode
+to error; its own default only reports.
+
+1. **Fix the component, not the story.** A story is a fixture; turning a rule off to make
+   one pass leaves the defect in the application and deletes the report.
+2. **A missing or wrong accessible name is a test failure too.** It is the same information
+   a role-and-name query matches on, so add the assertion in `tests/` while you are there.
+3. **A contrast failure is usually a token, not a component.** Check the light palette, the
+   dark palette and high contrast in the stylesheet `@steven-cutting/biscuit-games` ships
+   before changing any markup — and note that a token fault is repaired upstream and taken
+   here as a version, not edited in `node_modules`. See
+   [The platform upstream](../project/platform.md).
+4. **Silence is not always a pass.** Axe skips what it cannot attribute, including anything
+   behind `aria-hidden` — the monogram beside the lockup's words is not checked by the
+   contrast rule at all. Measure by hand when a guarantee rests on something the tool does
+   not report.
+5. **If a rule is genuinely wrong for this project**, configure it once, where the
+   configuration lives, with a stated reason. The rule about suppressions does not bend for
+   this tool; see [Quality philosophy](../explanation/quality-philosophy.md).
+
+## Publish it for visual review
+
+Axe answers whether a rule is broken. Whether the thing looks right is a different
+question, and it is answered by comparing the render against the last accepted one, in
+Chromatic. Why, and what it costs, is in
+[Decision 0006](../decisions/0006-visual-review-in-chromatic.md).
+
+**On a pull request**, comment:
+
+```text
+/chromatic
+```
+
+That publishes the branch and replies with a link. It is deliberately something you ask
+for, so a change that touches no component spends nothing. It has to be the whole word, on
+a pull request whose branch lives in this repository, from someone whose repository
+permission is write or better — a fork's pull request is refused, for the reason
+[the security model](../explanation/security-model.md) gives. A 🚀 on your comment means it
+was accepted; silence means one of those checks said no, and the reason is a notice on the
+run. The workflow also has to be on `main` before the comment does anything at all.
+
+**From a laptop**, with the project token exported:
+
+```console
+export CHROMATIC_PROJECT_TOKEN=…
+just chromatic
+```
+
+The recipe builds the workshop and publishes it. It is not part of `just check` — it needs
+the network and a token, so it sits beside `just check-links-online` rather than in the
+gate. It takes one optional argument, the branch name, which only CI passes: it checks a
+pull request out at a detached head and Chromatic would otherwise have no branch to file
+the build under.
+
+A visual change never fails the run. It is recorded for you to look at and accept in
+Chromatic, and a push to `main` accepts its own changes, so the baseline follows the branch
+without anyone maintaining it. The corollary is worth holding on to: a regression that gets
+merged becomes the baseline. The review is the pull request, and there is no second one.
+
+## Related pages
+
+- [Testing](../reference/testing.md)
+- [Test and debug](test-and-debug.md)
+- [Decision 0005: A component workshop](../decisions/0005-component-workshop.md)
+- [Decision 0006: Visual review in Chromatic](../decisions/0006-visual-review-in-chromatic.md)

@@ -1,0 +1,47 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.cache/
+.lycheecache
+.env
+.env.*
+!.env.example
+
+ai_tmp/
+
+# Assistant state written on first use; the agent contract covers only the
+# committed surface, so these must never enter the inventory.
+.claude/settings.local.json
+.codex/settings.local.json
+
+node_modules/
+.svelte-kit/
+build/
+coverage/
+
+# The pinned allium binary, installed by `just install-allium`. Ignored because
+# `just check` snapshots the worktree between recipes, so a binary Git can see
+# would abort the run before any recipe's exit code is read.
+.tools/
+
+# The workshop's static build, and the log a failed `storybook dev` drops beside
+# it. `just check` re-snapshots the worktree after every recipe, so a generated
+# file Git can see aborts the run before the recipe's own exit code is read.
+storybook-static/
+*storybook.log
+
+# What `just chromatic` drops in the working directory when a publish goes
+# wrong. `build-storybook.log` is already caught above; these are the rest of
+# the set the CLI names, and the junit report is written wherever it is asked
+# for one.
+chromatic.log
+chromatic-diagnostics.json
+chromatic-build-*.xml
+
+# Vitest browser mode writes failure screenshots and attachments next to the
+# tests it ran. vitest.storybook.config.ts turns screenshots off; these are the
+# net under it.
+__screenshots__/
+.vitest-attachments/

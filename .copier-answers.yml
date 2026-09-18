@@ -1,0 +1,7 @@
+# Managed by Copier. Do not edit by hand; run `copier update` instead.
+_commit: v2.0.0
+_src_path: gh:steven-cutting/biscuit_games_template
+description: A sudoku puzzle game for Biscuit Games.
+game_name: Pawdoku
+game_slug: pawdoku
+repository: steven-cutting/pawdoku

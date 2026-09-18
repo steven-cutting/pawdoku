@@ -1,0 +1,71 @@
+{
+  "name": "pawdoku",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=26 <27",
+    "npm": ">=11 <12"
+  },
+  "volta": {
+    "node": "26.5.1",
+    "npm": "11.17.0"
+  },
+  "scripts": {
+    "prepare": "svelte-kit sync",
+    "dev": "vite dev --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "lint": "svelte-kit sync && eslint . && prettier --check .",
+    "lint:fix": "svelte-kit sync && eslint . --fix && prettier --write .",
+    "format": "prettier --write .",
+    "test": "vitest run --config vite.config.ts",
+    "coverage": "vitest run --config vite.config.ts --coverage",
+    "storybook": "storybook dev -p 6006 --no-open --no-version-updates",
+    "storybook:build": "storybook build --output-dir storybook-static",
+    "storybook:test": "node scripts/check_playwright_browsers.js && vitest run --config vitest.storybook.config.ts",
+    "storybook:browsers": "playwright install chromium",
+    "storybook:browsers:deps": "playwright install-deps chromium",
+    "chromatic": "chromatic"
+  },
+  "dependencies": {
+    "@steven-cutting/biscuit-games": "1.1.0",
+    "@sveltejs/kit": "2.70.2",
+    "svelte": "5.56.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@storybook/addon-a11y": "10.5.7",
+    "@storybook/addon-docs": "10.5.7",
+    "@storybook/addon-svelte-csf": "5.1.2",
+    "@storybook/addon-vitest": "10.5.7",
+    "@storybook/svelte": "10.5.7",
+    "@storybook/sveltekit": "10.5.7",
+    "@sveltejs/adapter-static": "3.0.10",
+    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "@testing-library/jest-dom": "7.0.0",
+    "@testing-library/svelte": "5.4.2",
+    "@testing-library/user-event": "14.6.3",
+    "@types/node": "26.2.0",
+    "@vitest/browser": "4.1.10",
+    "@vitest/browser-playwright": "4.1.10",
+    "@vitest/coverage-v8": "4.1.10",
+    "chromatic": "18.2.0",
+    "eslint": "10.8.1",
+    "eslint-plugin-storybook": "10.5.7",
+    "eslint-plugin-svelte": "3.22.0",
+    "globals": "17.9.0",
+    "jsdom": "30.0.1",
+    "playwright": "1.62.1",
+    "prettier": "3.9.6",
+    "prettier-plugin-svelte": "4.1.1",
+    "storybook": "10.5.7",
+    "svelte-check": "4.7.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.66.0",
+    "vite": "8.2.1",
+    "vitest": "4.1.10"
+  }
+}
