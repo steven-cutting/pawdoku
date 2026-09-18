@@ -60,6 +60,11 @@ extend-exclude = [
   "uv.lock",
 ]
 
+[tool.typos.default.extend-words]
+# "mis-" as a hyphenated prefix (mis-wired, mis-asserting) reads as the
+# fragment "mis", which the checker's dictionary mistakes for "miss"/"mist".
+mis = "mis"
+
 [tool.biscuit-games-tooling]
 # What `just check` runs, in order, before `check-clean`. This is the package's
 # default; it is written out so a game that adds a gate appends to it.
