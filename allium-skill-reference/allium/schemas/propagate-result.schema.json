@@ -54,6 +54,9 @@
       "type": "array",
       "items": { "type": "string" }
     },
-    "summary": { "type": "string", "description": "the `N obligations, M covered, K uncovered` line" }
+    "summary": {
+      "type": "string",
+      "description": "the `N obligations, M covered, K uncovered` line"
+    }
   }
 }

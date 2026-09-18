@@ -24,10 +24,19 @@
         "required": ["subject", "classification", "spec", "code"],
         "additionalProperties": false,
         "properties": {
-          "subject": { "type": "string", "description": "the entity, rule or trigger the divergence is about" },
+          "subject": {
+            "type": "string",
+            "description": "the entity, rule or trigger the divergence is about"
+          },
           "classification": { "enum": ["spec-bug", "code-bug", "aspirational", "intentional-gap"] },
-          "spec": { "type": "string", "description": "what the spec says, with file:line where known" },
-          "code": { "type": "string", "description": "what the code does, with file:line where known" }
+          "spec": {
+            "type": "string",
+            "description": "what the spec says, with file:line where known"
+          },
+          "code": {
+            "type": "string",
+            "description": "what the code does, with file:line where known"
+          }
         }
       }
     },

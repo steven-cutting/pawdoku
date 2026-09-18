@@ -17,7 +17,10 @@
         "additionalProperties": false,
         "properties": {
           "name": { "type": "string", "description": "the phase / subagent, e.g. weed, propagate" },
-          "reason": { "type": "string", "description": "why it was chosen this tick, e.g. the field that triggered it" }
+          "reason": {
+            "type": "string",
+            "description": "why it was chosen this tick, e.g. the field that triggered it"
+          }
         }
       }
     },

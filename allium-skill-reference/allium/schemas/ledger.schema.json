@@ -21,7 +21,10 @@
       "type": "object",
       "description": "path -> content hash, written by propagate; the witness tamper baseline"
     },
-    "reconciliation": { "type": "string", "description": "propagate's `N obligations, M covered, K uncovered` line" },
+    "reconciliation": {
+      "type": "string",
+      "description": "propagate's `N obligations, M covered, K uncovered` line"
+    },
     "last_results": {
       "type": "object",
       "description": "the most recent typed record per phase (distill, weed, tend, propagate, witness)"

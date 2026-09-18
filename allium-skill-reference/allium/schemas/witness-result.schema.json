@@ -19,9 +19,15 @@
         "required": ["name", "result", "ground_truth"],
         "additionalProperties": false,
         "properties": {
-          "name": { "type": "string", "description": "e.g. tests-pass, no-test-weakened, coverage, weed-verdict, open-questions, convergence, red-before-green" },
+          "name": {
+            "type": "string",
+            "description": "e.g. tests-pass, no-test-weakened, coverage, weed-verdict, open-questions, convergence, red-before-green"
+          },
           "result": { "enum": ["pass", "fail", "inconclusive"] },
-          "ground_truth": { "type": "string", "description": "the evidence read: runner exit status, hash comparison, reconciliation line, weed verdict, open-questions diff" }
+          "ground_truth": {
+            "type": "string",
+            "description": "the evidence read: runner exit status, hash comparison, reconciliation line, weed verdict, open-questions diff"
+          }
         }
       }
     },
@@ -34,7 +40,10 @@
         "additionalProperties": false,
         "properties": {
           "violation": { "type": "string" },
-          "routing": { "type": "string", "description": "the phase that resolves it (e.g. revert + propagate, implement, escalate)" }
+          "routing": {
+            "type": "string",
+            "description": "the phase that resolves it (e.g. revert + propagate, implement, escalate)"
+          }
         }
       }
     },
