@@ -6,8 +6,9 @@
 --   The root module of this game's specification. It states the figures the
 --   platform also states, so the gate can hold the two equal, and one surface
 --   with one guarantee, so the specification is checked rather than merely
---   present. What the game is, how it starts and how it ends is still to be
---   specified — here, or in modules that import this one.
+--   present. The rules of the game are sudoku.allium's, a module beside this
+--   one that imports nothing. How those rules are drawn is still to be
+--   specified, in modules that import both.
 --
 -- Includes
 --   - The six figures @steven-cutting/biscuit-games states in

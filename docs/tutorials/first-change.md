@@ -38,11 +38,11 @@ and a main landmark with a short placeholder in it. The lockup's words come from
 
 ## 3. Read what decides the behaviour
 
-Open the one module under `docs/specs/`, named after this game's slug, and find the `Play`
-surface and its guarantee. The `config` block above it restates six figures the platform
-states, and `src/lib/config.ts` mirrors them; `tests/platformSpecs.test.ts` holds the three
-equal, so a figure changed in one place and not the others fails the gate rather than
-drifting.
+Open the root module under `docs/specs/`, the one named after this game's slug, and find
+the `Play` surface and its guarantee. The `config` block above it restates six figures the
+platform states, and `src/lib/config.ts` mirrors them; `tests/platformSpecs.test.ts` holds
+the three equal, so a figure changed in one place and not the others fails the gate rather
+than drifting.
 
 ## 4. Change something
 

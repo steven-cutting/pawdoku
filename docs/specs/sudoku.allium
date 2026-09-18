@@ -112,15 +112,17 @@ entity Cell {
     -- player's to change. Read from the puzzle's givens, which never change.
     is_given: puzzle.givens.any(g => g.position.row = row and g.position.column = column)
 
-    -- Every cell that shares a row, a column or a box with this one. The
-    -- predicate is true of the cell itself, so whatever reads peers sets it
-    -- aside.
+    -- Every other cell that shares a row, a column or a box with this one.
+    -- The last clause sets the cell itself aside, by position because
+    -- OneCellToAPosition makes a position name one cell, so nothing that
+    -- reads peers has to.
     peers: Cell with puzzle = this.puzzle
         and (row = this.row or column = this.column or (band = this.band and stack = this.stack))
+        and (row != this.row or column != this.column)
 
     -- A conflict is two peers holding one digit, and both cells are in it.
     -- An empty cell conflicts with nothing.
-    is_conflicting: digit != null and peers.any(p => p != this and p.digit = digit)
+    is_conflicting: digit != null and peers.any(p => p.digit = digit)
 }
 
 ------------------------------------------------------------
@@ -237,6 +239,13 @@ rule PuzzleSolved {
 -- and so is prose: a puzzle's givens never change, because no rule writes
 -- Puzzle.givens. GivenCellsHoldTheirGiven then keeps every given cell at its
 -- given's digit, and both moves refuse a cell that is given.
+--
+-- A state is what stands once a stimulus and the rules it sets off have run.
+-- SetPuzzle and LayOutGrid are one such step: the pinned checker sees a
+-- creation only when it is unbound, so the puzzle is created by one rule and
+-- its cells by the next, and the puzzle with no cells that stands between
+-- them is not a state anything reaches or sees. The language reference checks
+-- invariants after rule sequences, and TheGridIsWhole is to be read that way.
 
 invariant TheGridIsWhole {
     for puzzle in Puzzles:
@@ -283,7 +292,7 @@ invariant GivenCellsHoldTheirGiven {
 invariant GivensNeverConflict {
     for a in Cells:
         for b in Cells:
-            a != b and a.is_given and b.is_given and b in a.peers
+            a.is_given and b.is_given and b in a.peers
                 implies a.digit != b.digit
 }
 
@@ -309,7 +318,11 @@ surface PuzzleSetting {
         -- partially completed and has exactly one solution.
 }
 
--- What a player has in front of them.
+-- What a player has in front of them. It draws nothing, so it carries no
+-- guarantee about how a state is shown: given and conflicting are states the
+-- module that draws them owes a non-colour indication and an accessible name.
+-- The digit of PlaceDigit is the player's to supply once the move is offered,
+-- so its range is the rule's to refuse and not a condition of the offer.
 surface PuzzleSolving {
     context puzzle: Puzzle
 
