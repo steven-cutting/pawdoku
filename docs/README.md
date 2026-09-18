@@ -13,7 +13,8 @@ reachable from here. That is the whole of the arrangement; the rules behind it a
 [Documentation contract](reference/documentation-contract.md).
 
 Behaviour is specified separately, in Allium, under `docs/specs/`, rooted at
-[`pawdoku.allium`](specs/pawdoku.allium). Three more modules are the
+[`pawdoku.allium`](specs/pawdoku.allium), with the rules of Sudoku themselves in
+[`sudoku.allium`](specs/sudoku.allium). Three more modules are the
 platform's, arrive inside `@steven-cutting/biscuit-games`, and are compared against this
 game's restatements rather than edited here; see
 [The platform upstream](project/platform.md). Those files are not part of this handbook;
