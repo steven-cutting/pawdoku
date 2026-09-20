@@ -18,6 +18,7 @@ after its slug, and the modules the game adds beside it. This page is the proced
 | --- | --- |
 | `<slug>.allium`, the root module | The six figures the platform also states, and the `Play` surface with its one guarantee. A module that needs a figure or the `Play` surface imports this one. |
 | `sudoku.allium` | The rules of classic Sudoku and nothing about how they look: the grid, its units and peers, what a setter may pose, the two moves a player has, conflicts, and when a puzzle is solved. It imports nothing; a module that draws the rules imports it and the root. |
+| `solver.allium` | What decides whether a set of givens is well-posed: the search, its branches and candidates, propagation by singles, contradiction, the guess on a cell with the fewest candidates, and the verdict of none, one or many with the solutions found. It imports `sudoku.allium`, which does not import it, and says nothing of how a solver is stored or made fast. |
 
 Each module opens with `Scope`, `Includes` and `Excludes`. If your change falls under
 another module's `Excludes`, it belongs there.

@@ -28,7 +28,8 @@
 --   - Variants: other sizes, irregular boxes, diagonals, cages, overlapping
 --     grids. Each is a different game.
 --   - How a setter finds givens, how hard a puzzle is, and how anyone solves
---     one. solution_count below is a black box for that reason.
+--     one. solution_count below is a black box for that reason; what decides
+--     it is solver.allium's, which imports this module and is not imported.
 --   - Notes, hints, undo, timers, counts of mistakes and whatever is remembered
 --     between visits. None is a rule of Sudoku.
 --   - Whether a surface refuses, flags or merely allows a conflicting
@@ -162,6 +163,8 @@ rule SetPuzzle {
     -- because those have no solution at all; and it fails givens that leave
     -- the answer open, because those have several. The fewest givens that can
     -- pass is 17, which is a fact about this rule and not another rule.
+    -- solver.allium says how the count is decided: its verdict is one
+    -- exactly when this is 1.
     requires: solution_count(givens, config.side) = 1
 
     ensures: Puzzle.created(givens: givens, status: unsolved)

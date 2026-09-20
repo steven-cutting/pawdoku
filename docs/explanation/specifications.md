@@ -30,13 +30,17 @@ named guarantee, it is testable.
 
 ## What the modules are
 
-Two are the game's today. The root module under `docs/specs/`, named after this game,
+Three are the game's today. The root module under `docs/specs/`, named after this game,
 which [the documentation map](../README.md) names, states the six figures the
 platform states, so `tests/platformSpecs.test.ts` can hold the two equal, and one
 surface with one guarantee, so the specification is checked rather than merely
 present. `sudoku.allium` states the rules of classic Sudoku — the grid, what a setter
 may pose, what a player may do and when a puzzle is solved — and nothing about how any
-of it looks, so it imports nothing; a module that draws the rules imports both. The platform's own three,
+of it looks, so it imports nothing; a module that draws the rules imports both.
+`solver.allium` states what `sudoku.allium` leaves a black box: the search that gives a
+set of givens its verdict — no solution, one or many — and the work that search may be
+seen to do, and nothing about how it is stored or made fast. It imports the rules and is
+not imported by them. The platform's own three,
 `appearance.allium`, `operation.allium` and `play-surfaces.allium`, ship inside
 `@steven-cutting/biscuit-games` and are not imported: Allium has no cross-repository
 import, so a clause this game restates is held to the platform's text by test instead.

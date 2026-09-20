@@ -14,7 +14,8 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 ## The game
 
 The game adds a row for every term its specification names. The Sudoku terms are
-`sudoku.allium`'s, which picks one word where the game's literature has several.
+`sudoku.allium`'s, which picks one word where the game's literature has several, and the
+solving terms are `solver.allium`'s.
 
 | Term | Meaning |
 | --- | --- |
@@ -31,6 +32,14 @@ The game adds a row for every term its specification names. The Sudoku terms are
 | Well-posed | Having exactly one solution. Every puzzle a setter may pose is. Never proper. |
 | Conflict | Two peers holding the same digit. The rules permit it and both cells are in it. |
 | Solved | Every cell holds a digit and none conflicts. Final: a solved puzzle takes no more moves. |
+| Candidate | A digit a cell may still hold while givens are being solved. `solver.allium`'s, as are the seven terms below. |
+| Search | The solving of one set of givens, from the moment they are handed over to its verdict. |
+| Branch | One grid of candidates within a search. One works at a time, and a guess splits it into a child for each candidate of one cell. |
+| Propagate | To strike a placed digit from its peers' candidates and place the singles that leaves, until nothing more follows. |
+| Guess | A digit tried in a cell when propagation has run out, and the branch opened to try it. Never trial or assumption. |
+| Contradiction | A branch that can hold no solution: a cell with no candidate, a unit with no place for a digit, or a cell that is the only place for two digits. |
+| Verdict | What a search concludes of its givens: none, one or many solutions. One is well-posed. |
+| Solution | A full grid with no conflict that holds every given. What a solved branch holds. |
 
 ## The repository
 

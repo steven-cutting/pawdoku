@@ -14,7 +14,8 @@ reachable from here. That is the whole of the arrangement; the rules behind it a
 
 Behaviour is specified separately, in Allium, under `docs/specs/`, rooted at
 [`pawdoku.allium`](specs/pawdoku.allium), with the rules of Sudoku themselves in
-[`sudoku.allium`](specs/sudoku.allium). Three more modules are the
+[`sudoku.allium`](specs/sudoku.allium) and what decides whether givens are well-posed in
+[`solver.allium`](specs/solver.allium). Three more modules are the
 platform's, arrive inside `@steven-cutting/biscuit-games`, and are compared against this
 game's restatements rather than edited here; see
 [The platform upstream](project/platform.md). Those files are not part of this handbook;
@@ -74,3 +75,6 @@ understand how the two relate.
 
 Pages this game adds are listed here, after everything the template manages, so an
 update from the template and an addition here land in different places.
+
+- [Strategies for solving Sudoku](explanation/solving-sudoku.md) — how people, mathematics and
+  programs solve one, and the background to [`solver.allium`](specs/solver.allium).
