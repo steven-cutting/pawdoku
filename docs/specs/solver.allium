@@ -161,10 +161,13 @@ entity Branch {
     -- Depth first: a waiting branch may work only when none waits deeper.
     -- Breadth first would keep every other clause here and still open
     -- branches without end on an empty grid before a second solution showed.
+    -- And only when every waiting branch is laid out, so that chosen reads
+    -- every child of a split and never just the ones laid out so far.
     is_ready:
         status = waiting
             and is_laid_out
-            and search.waiting_branches.all(other => other.depth <= depth)
+            and search.waiting_branches.all(other =>
+                other.depth <= depth and other.is_laid_out)
 
     -- The one ready branch an idle search takes up. chosen is a black box:
     -- one member of the collection, and the same one whenever the collection
@@ -369,6 +372,10 @@ rule AttendWaitingBranch {
     when: branch: Branch.is_due
 
     requires: branch.status = waiting
+
+    -- Read when the rule runs and not when it was set off: a branch whose
+    -- turn has since gone to another is not taken up.
+    requires: branch.is_due
 
     -- One rule and two ends. The search has concluded, and whatever still
     -- waits is left unopened; or it has not, and this is the deepest branch
