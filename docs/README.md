@@ -15,7 +15,10 @@ reachable from here. That is the whole of the arrangement; the rules behind it a
 Behaviour is specified separately, in Allium, under `docs/specs/`, rooted at
 [`pawdoku.allium`](specs/pawdoku.allium), with the rules of Sudoku themselves in
 [`sudoku.allium`](specs/sudoku.allium) and what decides whether givens are well-posed in
-[`solver.allium`](specs/solver.allium). Three more modules are the
+[`solver.allium`](specs/solver.allium). How a person solves one is
+[`technique.allium`](specs/technique.allium)'s, with three models of a player built on it:
+[`reach.allium`](specs/reach.allium), [`effort.allium`](specs/effort.allium) and
+[`lapse.allium`](specs/lapse.allium). Three more modules are the
 platform's, arrive inside `@steven-cutting/biscuit-games`, and are compared against this
 game's restatements rather than edited here; see
 [The platform upstream](project/platform.md). Those files are not part of this handbook;

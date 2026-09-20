@@ -1,0 +1,787 @@
+-- allium: 3
+--
+-- Technique — what a person can deduce from a grid
+--
+-- Scope
+--   The named techniques a person solves Sudoku by, stated once: when each
+--   holds on a grid of digits and candidates, what it places or strikes, and
+--   what it asks of whoever would find it. And the profile of a player, which
+--   says how much of that one person can find. It is the ground three models
+--   of a player stand on. reach.allium has a limit hide a deduction,
+--   effort.allium has it make one dear, and lapse.allium has it lead a player
+--   into guessing; none of them says again what a hidden pair is.
+--   Sources: docs/explanation/solving-sudoku.md, for the techniques, their
+--   names and the order a careful solver tries them in, and Cowan (2001),
+--   "The magical number 4 in short-term memory", Behavioral and Brain
+--   Sciences 24, for how much is held in mind at once.
+--
+-- Includes
+--   - The catalogue: every technique the source names, in ladder order, with
+--     its family, whether it reads marks, and what it loads a mind with. The
+--     ladder through subsets is specified here; the rest is named and no more.
+--   - The grid a technique is read from: cells with digits and candidates,
+--     and the units they sit in. One grid serves a set of givens and a puzzle
+--     in play alike, and a model may keep more than one.
+--   - Twelve techniques in full: full unit, cross-hatch, naked single, hidden
+--     single, pointing, claiming, and naked and hidden pairs, triples and
+--     quads.
+--   - Deductions: one for each place a technique holds, saying where, with
+--     which digits, and what it places or strikes.
+--   - The profile: repertoire, capacity, spans, marking, order, fixation,
+--     upkeep, budget, fatigue and patience, and two presets, novice and
+--     expert. Every model is handed the same profile and reads what it needs.
+--
+-- Excludes
+--   - Which deduction a player takes, what a missed one costs, and when a
+--     player guesses. Those are the models', and each says so itself.
+--   - Keeping candidates true. A grid is laid out with every candidate the
+--     start allows and no other. After that a placed digit leaves its peers'
+--     candidates only when the grid's keeper strikes it; this module says
+--     which candidates are stale and no more, because how well marks are
+--     kept is the very thing lapse.allium varies.
+--   - The preconditions of fish, wings, colouring, chains, uniqueness tests
+--     and Nishio. Each is named, ranked and left as an open question.
+--   - Chance. Nothing here is drawn at random; a profile is a fixed set of
+--     figures and the same grid licenses the same deductions every time.
+--   - How a grid is stored, how deductions are found quickly, and the order
+--     in which equal deductions are listed.
+--   - Variants, as sudoku.allium excludes them.
+--
+-- Dependencies
+--   sudoku.allium, for Given, Position and the two sides of the grid. It does
+--   not depend on solver.allium: a technique strikes only what the rules
+--   forbid, which DeductionsAreSound states against sudoku.allium's
+--   solution, and no search is run to find one.
+--
+-- Vocabulary
+--   sudoku.allium's and solver.allium's words stand: given, unit (never
+--   house), peer, box, candidate, guess, contradiction. To them: technique.
+--   Deduction, one place a technique holds. Placement, a digit a deduction
+--   puts in a cell; strike, candidates it removes (never eliminate). Mark, a
+--   candidate as the player has it written. Load, how many things a deduction
+--   has held in mind at once; capacity, how many a player can. Extent, how
+--   much of the grid a deduction is read across; span, an extent a player
+--   takes in. Pointing and claiming, never box-line reduction. Cross-hatch, a
+--   hidden single read from the placed digits alone, in a box or, by the same
+--   crossing-out, in a line. Subset for a pair, a triple or a quad.
+
+use "./sudoku.allium" as sudoku
+
+------------------------------------------------------------
+-- Enumerations
+------------------------------------------------------------
+
+enum UnitKind { row | column | box }
+
+-- The source's families, in the order its workflow reaches them.
+enum Family {
+    singles | locked_candidates | naked_subsets | hidden_subsets
+    | fish | wings | colouring | chains | uniqueness | contradiction
+}
+
+-- How much of the grid a deduction is read across, narrowest first: a cell's
+-- own marks; one box; one row or column; a box and a line through it.
+enum Extent { one_cell | one_box | one_line | box_and_line }
+
+-- Whether the player writes candidates down. A player who does not has only
+-- the techniques that read placed digits.
+enum Marking { no_marks | full_marks }
+
+-- Systematic is the source's fixed-point workflow: the lowest technique on
+-- the ladder that yields anything, and back to the bottom after every step.
+-- Unsystematic takes what it sees, low or high.
+enum Order { systematic | unsystematic }
+
+-- What a player's eye returns to: nothing in particular, the cells around
+-- the last step, or the digit the last step dealt in.
+enum Fixation { unfixed | nearby | same_digit }
+
+------------------------------------------------------------
+-- External Entities
+------------------------------------------------------------
+
+-- Whatever keeps a grid: a model's run. A model passes its own entity here,
+-- so that it can find the grid it opened and this module need not know any
+-- model.
+external entity Keeper {}
+
+------------------------------------------------------------
+-- Value Types
+------------------------------------------------------------
+
+value UnitRef {
+    kind: UnitKind
+
+    -- From 1 to config.side. Rows count from the top, columns from the left
+    -- and boxes left to right and then top to bottom, as GridCell.box_number.
+    index: Integer
+}
+
+-- A digit a deduction puts in a cell.
+value Placement {
+    position: sudoku/Position
+    digit: Integer
+}
+
+-- The candidates a deduction removes from one cell.
+value Strike {
+    position: sudoku/Position
+    digits: Set<Integer>
+}
+
+-- One place a technique holds on a grid. licensed below says which exist;
+-- the fields are pinned there, technique by technique.
+value Deduction {
+    technique: Technique
+
+    -- The unit the pattern is read in. Absent for a naked single, which is
+    -- read from one cell.
+    unit: UnitRef?
+
+    extent: Extent
+
+    -- Where the pattern sits and the digits it is made of.
+    cells: Set<sudoku/Position>
+    digits: Set<Integer>
+
+    -- A deduction places or strikes and never both. A placed digit leaves
+    -- its peers' candidates by upkeep, which is the keeper's and not a
+    -- strike of the deduction's.
+    placement: Placement?
+    strikes: Set<Strike>
+
+    load: Integer
+}
+
+-- A player. Every figure is a field and none is config, because config in
+-- these modules names a number and does not tune one; a player is tuned.
+-- Each model reads the fields its header names and ignores the rest, so one
+-- profile can be put through all three and the results compared.
+value Profile {
+    -- The techniques the player knows.
+    repertoire: Set<Technique>
+
+    -- How many things the player holds in mind at once. Cowan puts it at
+    -- three to five for an adult; it is a field so that it can be moved.
+    capacity: Integer
+
+    -- The extents the player takes in. A set and not a ceiling, so that a
+    -- player can be given a line and not a box, or the reverse.
+    spans: Set<Extent>
+
+    marking: Marking
+    order: Order
+    fixation: Fixation
+
+    -- The kinds of unit in which the player strikes a digit from their marks
+    -- after placing it. lapse.allium's; the other models keep every mark
+    -- true.
+    upkeep: Set<UnitKind>
+
+    -- How much effort the player will spend on one puzzle, and how much of
+    -- it takes one from capacity. effort.allium's unit, and provisional with
+    -- it.
+    budget: Integer
+    fatigue: Integer
+
+    -- How many looks in a row may find nothing before the player guesses.
+    -- lapse.allium's. reach.allium and effort.allium never guess.
+    patience: Integer
+
+    knows(x): x.technique in repertoire
+    holds(x): x.load <= capacity
+    takes_in(x): x.extent in spans
+    can_read(x): not x.technique.reads_marks or marking = full_marks
+}
+
+------------------------------------------------------------
+-- Entities and Variants
+------------------------------------------------------------
+
+-- An entry in the catalogue. The techniques are the default instances below
+-- and no rule makes another.
+entity Technique {
+    -- Its place on the ladder, 1 the first thing tried. No two share one.
+    rank: Integer
+
+    family: Family
+
+    -- Whether it reads candidates. One that does not reads placed digits
+    -- alone and is open to a player who keeps no marks.
+    reads_marks: Boolean
+
+    -- What one of its deductions holds in mind at once, counted in chunks
+    -- and not in cells and digits: a single is one thing, pointing and
+    -- claiming are a box and a line, and a subset of k cells is k. Absent
+    -- where it depends on the deduction or has not been decided.
+    load: Integer?
+
+    -- Whether this module says when it holds. Only a specified technique is
+    -- ever licensed.
+    is_specified: Boolean
+}
+
+entity Grid {
+    keeper: Keeper
+
+    -- The digits standing in the grid when it is opened. For a set of givens
+    -- that is the givens. For a puzzle in play it is every digit in it, the
+    -- player's read as fixed like the setter's.
+    start: Set<sudoku/Given>
+
+    cells: GridCell with grid = this
+    units: Unit with grid = this
+    open_cells: cells where digit = null
+    stale_cells: cells where has_stale_candidate
+
+    is_laid_out: cells.count = config.side * config.side
+    is_filled: is_laid_out and open_cells.count = 0
+
+    -- No candidate stands that a placed peer rules out. Every technique
+    -- below is stated of candidates as they stand, kept or not.
+    is_kept: is_laid_out and stale_cells.count = 0
+
+    -- An open cell with nothing left. It cannot happen while the candidates
+    -- are true; lapse.allium is where they may not be.
+    is_contradictory: open_cells.any(c => c.candidates.count = 0)
+
+    -- licensed is a black box, pinned by EveryDeductionIsLicensed and by
+    -- this. It holds one deduction for each of the following and no other,
+    -- each once, and the same ones whenever the grid is the same. A digit
+    -- "has a place" in an open cell that allows it.
+    --   full_unit: each unit with one open cell. It places in that cell the
+    --     one digit the unit has not placed. Reads no marks.
+    --   cross_hatch: each unit and digit that cross_hatches. It places the
+    --     digit in the one open cell no placed peer rules out. Reads no marks.
+    --   naked_single: each open cell with one candidate. It places it.
+    --   hidden_single: each unit and digit that hides_single. It places the
+    --     digit in its one place.
+    --   pointing: each box, digit and line that point. It strikes the digit
+    --     from every open cell of the line outside the box.
+    --   claiming: each line and digit that claim. It strikes the digit from
+    --     every open cell of the box outside the line.
+    --   naked pair, triple, quad: each unit and set of k open cells that
+    --     is_naked_subset, k being the technique's load. It strikes the
+    --     set's digits from every other open cell of the unit.
+    --   hidden pair, triple, quad: each unit, set of k digits and set of k
+    --     open cells that is_hidden_subset. It strikes every other digit
+    --     from those cells.
+    -- A deduction's cells are the pattern's cells and its digits the
+    -- pattern's digits; it has at most one strike to a position, and every
+    -- strike names only candidates that stand. One placement may be licensed
+    -- by several techniques, and then each has its own deduction.
+    deductions: licensed(this)
+}
+
+entity Unit {
+    grid: Grid
+    kind: UnitKind
+    index: Integer
+
+    cells: GridCell with grid = this.grid
+        and ((this.kind = row and row = this.index)
+            or (this.kind = column and column = this.index)
+            or (this.kind = box and box_number = this.index))
+    open_cells: cells where digit = null
+    placed_digits: cells where digit != null -> digit
+
+    -- Full unit ---------------------------------------------
+
+    -- One cell left, so one digit left, and it goes there.
+    is_full_unit: open_cells.count = 1
+
+    -- Singles -----------------------------------------------
+
+    -- The digit is still to be placed here and placed digits rule it out of
+    -- every open cell but one. Read from the grid as printed.
+    cross_hatches(d):
+        not (d in placed_digits)
+            and open_cells.any(c => c.is_open_to(d)
+                and open_cells.all(o => o = c or not o.is_open_to(d)))
+
+    -- The same, read from candidates: one cell of the unit allows the digit,
+    -- whatever else it allows.
+    hides_single(d):
+        not (d in placed_digits)
+            and open_cells.any(c => c.allows(d)
+                and open_cells.all(o => o = c or not o.allows(d)))
+
+    -- Pointing and claiming ---------------------------------
+
+    -- Two places or more. With one it is a hidden single.
+    has_places(d):
+        open_cells.any(a => open_cells.any(b => a != b and a.allows(d) and b.allows(d)))
+
+    -- A box whose places for a digit lie in one row, which allows the digit
+    -- somewhere outside the box. The box must hold the digit, so it holds it
+    -- on that row, and the rest of the row cannot.
+    points_along_row(d):
+        kind = box and has_places(d)
+            and open_cells.all(a => open_cells.all(b =>
+                a.allows(d) and b.allows(d) implies a.row = b.row))
+            and open_cells.any(a => a.allows(d)
+                and a.row_mates.any(m => not (m in cells) and m.allows(d)))
+
+    points_along_column(d):
+        kind = box and has_places(d)
+            and open_cells.all(a => open_cells.all(b =>
+                a.allows(d) and b.allows(d) implies a.column = b.column))
+            and open_cells.any(a => a.allows(d)
+                and a.column_mates.any(m => not (m in cells) and m.allows(d)))
+
+    points(d): points_along_row(d) or points_along_column(d)
+
+    -- The converse. A line whose places for a digit lie in one box, which
+    -- allows the digit somewhere off the line.
+    claims(d):
+        kind != box and has_places(d)
+            and open_cells.all(a => open_cells.all(b =>
+                a.allows(d) and b.allows(d) implies a.box_number = b.box_number))
+            and open_cells.any(a => a.allows(d)
+                and a.box_mates.any(m => not (m in cells) and m.allows(d)))
+
+    -- Subsets -----------------------------------------------
+
+    -- Open cells of this unit that between them allow exactly as many digits
+    -- as there are cells. Those digits go in those cells, so no other cell of
+    -- the unit holds one; and some other cell allows one, or nothing is
+    -- struck. candidates_across is a black box: every digit some cell of the
+    -- set allows, each once.
+    is_naked_subset(s):
+        s.all(c => c in open_cells)
+            and candidates_across(s).count = s.count
+            and open_cells.any(c => not (c in s)
+                and c.candidates.any(d => d in candidates_across(s)))
+
+    -- Digits still to be placed in this unit, as many as the cells, whose
+    -- every place lies in those cells. Those cells hold those digits, so they
+    -- hold nothing else; and one of them allows something else, or nothing is
+    -- struck.
+    is_hidden_subset(ds, s):
+        ds.count = s.count
+            and s.all(c => c in open_cells)
+            and ds.all(d => not (d in placed_digits) and s.any(c => c.allows(d)))
+            and open_cells.all(c => c in s or not c.candidates.any(d => d in ds))
+            and s.any(c => c.candidates.any(d => not (d in ds)))
+
+    -- cell_subsets is a black box: every set of that many of the cells, each
+    -- once. digit_subsets likewise, of the digits from 1 to its first
+    -- argument.
+    has_naked_subset(k): cell_subsets(open_cells, k).any(s => is_naked_subset(s))
+
+    has_hidden_subset(k):
+        digit_subsets(config.side, k).any(ds =>
+            cell_subsets(open_cells, k).any(s => is_hidden_subset(ds, s)))
+
+    -- Licensing ---------------------------------------------
+
+    -- Whether a deduction read in this unit is one a technique allows.
+    licenses(x):
+        x.unit != null and x.unit.kind = kind and x.unit.index = index
+            and ((x.technique = full_unit and is_full_unit)
+                or (x.technique = cross_hatch and x.digits.any(d => cross_hatches(d)))
+                or (x.technique = hidden_single and x.digits.any(d => hides_single(d)))
+                or (x.technique = pointing and x.digits.any(d => points(d)))
+                or (x.technique = claiming and x.digits.any(d => claims(d)))
+                or (x.technique.family = naked_subsets and has_naked_subset(x.load))
+                or (x.technique.family = hidden_subsets and has_hidden_subset(x.load)))
+}
+
+entity GridCell {
+    grid: Grid
+    row: Integer
+    column: Integer
+    band: Integer
+    stack: Integer
+
+    -- Absent until the cell is placed: by the start or by a step.
+    digit: Integer?
+
+    -- The digits the cell may still hold, as its keeper has them. A placed
+    -- cell keeps its digit as its one candidate.
+    candidates: Set<Integer>
+
+    -- Filled by the start, and so not by any step.
+    is_start: grid.start.any(g => g.position.row = row and g.position.column = column)
+
+    -- Boxes count left to right and then top to bottom, from 1.
+    box_number: (band - 1) * config.box_side + stack
+
+    row_mates: GridCell with grid = this.grid
+        and row = this.row and column != this.column
+    column_mates: GridCell with grid = this.grid
+        and column = this.column and row != this.row
+    box_mates: GridCell with grid = this.grid
+        and band = this.band and stack = this.stack
+        and (row != this.row or column != this.column)
+
+    -- As sudoku.allium's Cell.peers, within one grid.
+    peers: GridCell with grid = this.grid
+        and (row = this.row or column = this.column or (band = this.band and stack = this.stack))
+        and (row != this.row or column != this.column)
+
+    placed_peer_digits: peers where digit != null -> digit
+
+    -- By sight: open, and no placed peer holds the digit. It asks nothing of
+    -- the candidates, so it is true of a grid nobody has marked.
+    is_open_to(d): digit = null and not (d in placed_peer_digits)
+
+    -- By marks: open, and the digit is among its candidates.
+    allows(d): digit = null and d in candidates
+
+    -- A candidate a placed peer rules out. Striking it is the keeper's.
+    has_stale_candidate: candidates.any(d => d in placed_peer_digits)
+
+    is_naked_single: digit = null and candidates.count = 1
+
+    licenses(x):
+        x.technique = naked_single and x.unit = null and is_naked_single
+            and x.placement != null
+            and x.placement.position.row = row
+            and x.placement.position.column = column
+}
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+
+config {
+    -- sudoku.allium's two figures, under its names, restated as
+    -- solver.allium restates them.
+    box_side: Integer = sudoku/config.box_side
+    side: Integer = sudoku/config.side
+}
+
+------------------------------------------------------------
+-- Defaults
+------------------------------------------------------------
+
+-- The catalogue, in ladder order: the order the source's workflow tries
+-- things in, cheap and local before dear and global. By sight before by
+-- marks; singles, then pointing and claiming, then subsets by size with
+-- naked before hidden; then fish, wings, colouring, chains, uniqueness and
+-- contradiction.
+
+default Technique full_unit = {
+    rank: 1, family: singles, reads_marks: false, load: 1, is_specified: true
+}
+
+default Technique cross_hatch = {
+    rank: 2, family: singles, reads_marks: false, load: 1, is_specified: true
+}
+
+default Technique naked_single = {
+    rank: 3, family: singles, reads_marks: true, load: 1, is_specified: true
+}
+
+default Technique hidden_single = {
+    rank: 4, family: singles, reads_marks: true, load: 1, is_specified: true
+}
+
+default Technique pointing = {
+    rank: 5, family: locked_candidates, reads_marks: true, load: 2, is_specified: true
+}
+
+default Technique claiming = {
+    rank: 6, family: locked_candidates, reads_marks: true, load: 2, is_specified: true
+}
+
+default Technique naked_pair = {
+    rank: 7, family: naked_subsets, reads_marks: true, load: 2, is_specified: true
+}
+
+default Technique hidden_pair = {
+    rank: 8, family: hidden_subsets, reads_marks: true, load: 2, is_specified: true
+}
+
+default Technique naked_triple = {
+    rank: 9, family: naked_subsets, reads_marks: true, load: 3, is_specified: true
+}
+
+default Technique hidden_triple = {
+    rank: 10, family: hidden_subsets, reads_marks: true, load: 3, is_specified: true
+}
+
+default Technique naked_quad = {
+    rank: 11, family: naked_subsets, reads_marks: true, load: 4, is_specified: true
+}
+
+default Technique hidden_quad = {
+    rank: 12, family: hidden_subsets, reads_marks: true, load: 4, is_specified: true
+}
+
+-- Named and ranked, and nothing licensed by them yet. A fish is the subset
+-- construction on one digit's places, so its load is its size; a wing is
+-- three cells. The rest depend on the deduction or are undecided.
+
+default Technique x_wing = {
+    rank: 13, family: fish, reads_marks: true, load: 2, is_specified: false
+}
+
+default Technique swordfish = {
+    rank: 14, family: fish, reads_marks: true, load: 3, is_specified: false
+}
+
+default Technique jellyfish = {
+    rank: 15, family: fish, reads_marks: true, load: 4, is_specified: false
+}
+
+default Technique xy_wing = {
+    rank: 16, family: wings, reads_marks: true, load: 3, is_specified: false
+}
+
+default Technique xyz_wing = {
+    rank: 17, family: wings, reads_marks: true, load: 3, is_specified: false
+}
+
+default Technique simple_colouring = {
+    rank: 18, family: colouring, reads_marks: true, load: null, is_specified: false
+}
+
+default Technique chain = {
+    rank: 19, family: chains, reads_marks: true, load: null, is_specified: false
+}
+
+default Technique uniqueness_test = {
+    rank: 20, family: uniqueness, reads_marks: true, load: null, is_specified: false
+}
+
+default Technique nishio = {
+    rank: 21, family: contradiction, reads_marks: true, load: null, is_specified: false
+}
+
+-- Two presets, one at each end. Both are ordinary profiles, and anything
+-- between them is made by moving a field.
+
+-- Someone who knows the rules and has been shown how to scan. No marks, so
+-- the two singles that read them are known and out of reach; takes what is
+-- seen and stays near it; soon guesses.
+default Profile novice = {
+    repertoire: { full_unit, cross_hatch, naked_single, hidden_single },
+    capacity: 3,
+    spans: { one_cell, one_box, one_line },
+    marking: no_marks,
+    order: unsystematic,
+    fixation: nearby,
+    upkeep: { box },
+    budget: 200,
+    fatigue: 50,
+    patience: 3
+}
+
+-- Someone to whom the whole catalogue is automatic. The repertoire names
+-- the unspecified techniques too, so that specifying one changes what an
+-- expert finds and not what an expert is.
+default Profile expert = {
+    repertoire: {
+        full_unit, cross_hatch, naked_single, hidden_single,
+        pointing, claiming,
+        naked_pair, hidden_pair, naked_triple, hidden_triple, naked_quad, hidden_quad,
+        x_wing, swordfish, jellyfish, xy_wing, xyz_wing,
+        simple_colouring, chain, uniqueness_test, nishio
+    },
+    capacity: 4,
+    spans: { one_cell, one_box, one_line, box_and_line },
+    marking: full_marks,
+    order: systematic,
+    fixation: unfixed,
+    upkeep: { row, column, box },
+    budget: 2000,
+    fatigue: 500,
+    patience: 50
+}
+
+------------------------------------------------------------
+-- Rules
+------------------------------------------------------------
+
+rule LayOutGrid {
+    when: grid: Grid.created
+
+    -- A grid, its cells and its units come into being together, as
+    -- sudoku.allium's puzzle and its cells do. grid_positions, box_index and
+    -- given_digit_at are sudoku.allium's black boxes and digits_up_to is
+    -- solver.allium's, read as they are there. start_digits_seen_from is a
+    -- black box: the digit of every entry of the start whose position shares
+    -- a row, a column or a box with this one and is not this one. A cell the
+    -- start fills is placed from the beginning, and every other cell allows
+    -- what the start does not rule out. So a grid is born kept: no candidate
+    -- is stale until a placement makes it so, and the first marking-up is
+    -- nobody's to get wrong.
+    ensures:
+        for position in grid_positions(config.side):
+            let start_digit = given_digit_at(grid.start, position)
+            GridCell.created(
+                grid: grid,
+                row: position.row,
+                column: position.column,
+                band: box_index(position.row, config.box_side),
+                stack: box_index(position.column, config.box_side),
+                digit: start_digit,
+                candidates:
+                    if start_digit != null: { start_digit }
+                    else: digits_up_to(config.side) - start_digits_seen_from(grid.start, position)
+            )
+        for index in digits_up_to(config.side):
+            Unit.created(grid: grid, kind: row, index: index)
+            Unit.created(grid: grid, kind: column, index: index)
+            Unit.created(grid: grid, kind: box, index: index)
+}
+
+------------------------------------------------------------
+-- Invariants
+------------------------------------------------------------
+
+-- These hold in every state a grid can reach, whoever keeps it. A state is
+-- what stands once a stimulus and the rules it sets off have run, as in
+-- sudoku.allium, and a grid is created by one rule and laid out by the next.
+
+invariant EveryDeductionIsLicensed {
+    for grid in Grids:
+        grid.deductions.all(x =>
+            grid.units.any(u => u.licenses(x)) or grid.cells.any(c => c.licenses(x)))
+}
+
+invariant OnlySpecifiedTechniquesAreLicensed {
+    for grid in Grids:
+        grid.deductions.all(x => x.technique.is_specified)
+}
+
+-- A deduction changes the grid, so taking one is progress, and it is one
+-- thing or the other.
+invariant ADeductionPlacesOrStrikes {
+    for grid in Grids:
+        grid.deductions.all(x =>
+            (x.placement != null and x.strikes.count = 0)
+                or (x.placement = null and x.strikes.count > 0))
+}
+
+invariant LoadIsTheTechniques {
+    for grid in Grids:
+        grid.deductions.all(x => x.technique.load != null implies x.load = x.technique.load)
+}
+
+-- A cell's own marks for a naked single; a box and a line for pointing and
+-- claiming; otherwise the one unit the pattern is read in. A cross-hatch
+-- looks along the lines through its unit for the digit, and is still read in
+-- the one unit: following a line to a printed digit is not holding the line.
+invariant ExtentFollowsThePattern {
+    for grid in Grids:
+        grid.deductions.all(x =>
+            (x.unit = null implies x.extent = one_cell)
+                and (x.technique.family = locked_candidates implies x.extent = box_and_line)
+                and (x.unit != null and x.technique.family != locked_candidates implies
+                    (x.unit.kind = box implies x.extent = one_box)
+                        and (x.unit.kind != box implies x.extent = one_line)))
+}
+
+invariant RanksAreDistinct {
+    for a in Techniques:
+        for b in Techniques:
+            a != b implies a.rank != b.rank
+}
+
+-- By-sight techniques ask less than their by-marks twins and come first, so
+-- a systematic player who could use either is recorded as using the cheaper.
+invariant SightComesBeforeMarks {
+    for a in Techniques:
+        for b in Techniques:
+            a.family = singles and b.family = singles
+                and not a.reads_marks and b.reads_marks
+                implies a.rank < b.rank
+}
+
+invariant PlacedCellsKeepOnlyTheirDigit {
+    for cell in GridCells:
+        cell.digit != null implies cell.candidates.all(d => d = cell.digit)
+}
+
+-- What LayOutGrid establishes, and what makes has_stale_candidate something
+-- that only ever turns true after a placement.
+invariant AGridIsBornKept {
+    for grid in Grids:
+        grid.is_laid_out and grid.cells.all(c => c.digit = null or c.is_start) implies grid.is_kept
+}
+
+invariant CandidatesAreDigits {
+    for cell in GridCells:
+        cell.candidates.all(d => d >= 1 and d <= config.side)
+}
+
+invariant EveryUnitIsWhole {
+    for unit in Units:
+        unit.grid.is_laid_out implies unit.cells.count = config.side
+}
+
+------------------------------------------------------------
+-- Surfaces
+------------------------------------------------------------
+
+-- What a model reads: the catalogue, the grid and what the grid licenses.
+-- It provides nothing, because a grid is opened and changed by its keeper.
+surface Catalogue {
+    context grid: Grid
+
+    exposes:
+        grid.keeper
+        grid.is_filled
+        grid.is_kept
+        grid.is_contradictory
+        grid.deductions
+        for cell in grid.cells:
+            cell.row
+            cell.column
+            cell.box_number
+            cell.digit
+            cell.candidates
+            cell.has_stale_candidate
+        for technique in Techniques:
+            technique.rank
+            technique.family
+            technique.reads_marks
+            technique.load
+            technique.is_specified
+
+    @guarantee DeductionsAreSound
+        -- Of a grid whose start is part of a solution, whose placed digits
+        -- are that solution's and whose every open cell still allows the
+        -- solution's digit: every licensed deduction places the solution's
+        -- digit or strikes only digits the solution does not use there. A
+        -- solution is a way to fill the grid that sudoku.allium's
+        -- solution_count counts. So a keeper that takes only licensed
+        -- deductions from a true grid is never wrong, and one whose marks
+        -- have lost a true candidate has no such promise.
+
+    @guarantee ExtraCandidatesHideAndNeverMislead
+        -- Every technique here is read from what the candidates rule out.
+        -- A grid that allows more than it should, because a stale candidate
+        -- was never struck, licenses fewer deductions and no false one. Only
+        -- a candidate wrongly struck, or a digit wrongly placed, can make a
+        -- licensed deduction wrong.
+
+    @guarantee SameGridSameDeductions
+        -- The same digits and candidates license the same deductions, every
+        -- time. Nothing here is left to chance.
+}
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open question "A cell whose placed peers hold every digit but one can be placed by counting, with no marks. Is that a technique of its own beside naked_single, and is its load one or the eight digits counted?"
+
+open question "Partial marking, such as writing a digit only where it has two places in a box: is it a third Marking, and which techniques can read it?"
+
+open question "Should a naked subset be refused when one of its cells has a single candidate, or a hidden one when a smaller subset lies inside it? Both are sound as stated; a systematic player takes the smaller pattern first anyway."
+
+open question "Fish (x_wing, swordfish, jellyfish): base and cover lines, what is struck, and whether finned and sashimi fish are techniques of their own."
+
+open question "Wings (xy_wing, xyz_wing): pivot and wings, what is struck, and whether w_wing belongs beside them."
+
+open question "simple_colouring: how a colouring is built from conjugate pairs, its two strikes, and how its load grows with the cells coloured."
+
+open question "chain: whether x-chains, xy-chains, AICs and forcing chains are one technique or several, and load as a function of length."
+
+open question "uniqueness_test: it assumes the puzzle is well-posed, which sudoku.allium guarantees of every puzzle set. Which patterns, and may a rating lean on them?"
+
+open question "nishio: solver.allium calls a trial a guess. Is a bounded contradiction test a technique on this ladder, or a guess and so lapse.allium's?"

@@ -30,7 +30,7 @@ named guarantee, it is testable.
 
 ## What the modules are
 
-Three are the game's today. The root module under `docs/specs/`, named after this game,
+Seven are the game's today. The root module under `docs/specs/`, named after this game,
 which [the documentation map](../README.md) names, states the six figures the
 platform states, so `tests/platformSpecs.test.ts` can hold the two equal, and one
 surface with one guarantee, so the specification is checked rather than merely
@@ -40,7 +40,20 @@ of it looks, so it imports nothing; a module that draws the rules imports both.
 `solver.allium` states what `sudoku.allium` leaves a black box: the search that gives a
 set of givens its verdict — no solution, one or many — and the work that search may be
 seen to do, and nothing about how it is stored or made fast. It imports the rules and is
-not imported by them. The platform's own three,
+not imported by them.
+
+Four more say how a person solves a puzzle, which `solver.allium` excludes.
+`technique.allium` states the named techniques once — when each holds on a grid of digits
+and candidates and what it places or strikes — and the profile of a player: what they
+know, how much they hold in mind, how much of the grid they take in, and whether they
+keep marks. Three models of that player stand on it and never import each other, because
+each is a different answer to what a limit does. In `reach.allium` a limit hides a
+deduction, so a puzzle is within a player's reach or it is not, and the next thing that
+player would find is a hint pitched at them. In `effort.allium` a limit makes a deduction
+dear, and a puzzle is priced end to end. In `lapse.allium` a limit lets marks fall
+behind until the player guesses, and a guess is the one thing that can be wrong.
+`technique.allium` and `reach.allium` are specified in full through subsets; the other two
+are coarse and say so in their `Scope`. The platform's own three,
 `appearance.allium`, `operation.allium` and `play-surfaces.allium`, ship inside
 `@steven-cutting/biscuit-games` and are not imported: Allium has no cross-repository
 import, so a clause this game restates is held to the platform's text by test instead.

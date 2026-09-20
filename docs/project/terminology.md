@@ -14,8 +14,9 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 ## The game
 
 The game adds a row for every term its specification names. The Sudoku terms are
-`sudoku.allium`'s, which picks one word where the game's literature has several, and the
-solving terms are `solver.allium`'s.
+`sudoku.allium`'s, which picks one word where the game's literature has several, the
+solving terms are `solver.allium`'s, and the terms of a person solving are
+`technique.allium`'s and its three models'.
 
 | Term | Meaning |
 | --- | --- |
@@ -40,6 +41,23 @@ solving terms are `solver.allium`'s.
 | Contradiction | A branch that can hold no solution: a cell with no candidate, a unit with no place for a digit, or a cell that is the only place for two digits. |
 | Verdict | What a search concludes of its givens: none, one or many solutions. One is well-posed. |
 | Solution | A full grid with no conflict that holds every given. What a solved branch holds. |
+| Technique | A named way a person deduces something from a grid: a full unit, a cross-hatch, a naked or hidden single, pointing, claiming, a naked or hidden subset, and the rest of `technique.allium`'s catalogue. |
+| Ladder | The order techniques are tried in, cheap and local before dear and global. A technique's rank is its place on it. |
+| Deduction | One place a technique holds on a grid: where, with which digits, and what it places or strikes. |
+| Placement | A digit a deduction, or a guess, puts in a cell. |
+| Strike | Candidates a deduction removes from a cell. Never eliminate. |
+| Mark | A candidate as the player has it written. Stale when a placed peer rules it out; lapsed marks are marks left stale. |
+| Subset | A pair, a triple or a quad, naked or hidden. |
+| Cross-hatch | A hidden single read from the placed digits alone, with no marks, in a box or a line. |
+| Pointing, claiming | A box whose places for a digit lie on one line, and a line whose places lie in one box. Never box-line reduction. |
+| Profile | A player as a set of figures: repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience. Novice and expert are presets. |
+| Load, capacity | How many things a deduction has held in mind at once, and how many a player can. |
+| Extent, span | How much of the grid a deduction is read across, and an extent a player takes in. |
+| Run | One player model put to one set of digits. It looks, steps and looks again. Each model has its own. |
+| Step | A deduction taken; in `lapse.allium` also a check, a guess or a repair. |
+| See, stall | In `reach.allium`: a deduction the profile does not hide is seen, and a run that sees nothing in an unfilled grid stalls. |
+| Price, escalation | In `effort.allium`: what a step costs this player, and a step taken from beyond their profile. |
+| Check, repair | In `lapse.allium`: bringing every mark up to date, and returning the grid to how it stood before a wrong guess. |
 
 ## The repository
 
