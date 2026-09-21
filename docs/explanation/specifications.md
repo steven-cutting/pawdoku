@@ -46,17 +46,21 @@ Five more say how a person solves a puzzle, which `solver.allium` excludes.
 `technique.allium` states the named techniques once — when each holds on a grid of digits
 and candidates and what it places or strikes — and the profile of a player: what they
 know, how much they hold in mind, how much of the grid they take in, and whether they
-keep marks. Three baseline models stand on it and never import each other, because
+keep marks. Four models stand on it and never import each other, because
 each is a different answer to what a limit does. In `reach.allium` a limit hides a
 deduction, so a puzzle is within a player's reach or it is not, and the next thing that
 player would find is a hint pitched at them. In `effort.allium` a limit makes a deduction
 dear, and a puzzle is priced end to end. In `lapse.allium` a limit lets marks fall
 behind until the player guesses, and a guess is the one thing that can be wrong.
-`technique.allium` now defines 29 techniques, including bounded chains and explicit
-uniqueness premises. `effort.allium` and `lapse.allium` remain coarse and retain their
-open questions. `human-solving.allium` shares the logical catalogue while specifying
-its own independently tunable cognition, experience, aids, fallible microsteps and
-seeded repeated assessments. Its [owning explanation](human-solving.md) states the
+In `human-solving.allium` a limit changes what is noticed, kept in mind and got wrong,
+by chance: it specifies independently tunable cognition, experience, aids, fallible
+microsteps and seeded repeated assessments, and the projection from its finer
+description of a player to `technique.allium`'s profile, so that one player can be put
+through all four and the results compared.
+`technique.allium` defines 29 techniques, including bounded chains and explicit
+uniqueness premises, and records how each question it once left open was resolved.
+`effort.allium` and `lapse.allium` remain coarse and retain their open questions, which
+name the answer `human-solving.allium` gives where it gives one. Its [owning explanation](human-solving.md) states the
 research basis and provisional parameter choices. These are behavioural contracts
 for a future simulator; passing the Allium gates is not an empirical validation.
 The platform's own three,

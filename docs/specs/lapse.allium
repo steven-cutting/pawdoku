@@ -3,14 +3,14 @@
 -- Lapse — a player whose marks fall behind, who guesses, and who is wrong
 --
 -- Scope
---   The third of three models of a player, and the one in which a limit
+--   The third of four models of a player, and the one in which a limit
 --   leads to error. The player's marks are kept up only as far as their
 --   upkeep reaches, so they fall behind the grid; a look that finds nothing
 --   is answered by checking them, and when patience runs out by a guess; a
 --   guess can be wrong, and a wrong one is found out and put right. A puzzle
---   is rated by how many steps all of that takes. reach.allium and
---   effort.allium model the same player differently and none of the three
---   imports another.
+--   is rated by how many steps all of that takes. reach.allium,
+--   effort.allium and human-solving.allium model the same player differently
+--   and none of the four imports another.
 --   This module is coarse. Its lifecycle and the four kinds of step are
 --   stated; how a guess is chosen, how well a player restores a grid and
 --   whether every run ends are open questions, and nothing should be built
@@ -34,8 +34,9 @@
 -- Excludes
 --   - Slips: a digit misread, a candidate struck by mistake, a mark never
 --     written. They need chance, which this game reaches through its
---     randomness port, and they are the layer this model is built to take
---     later. Nothing here is drawn at random.
+--     randomness port, and they are human-solving.allium's, which draws them
+--     by seed. Nothing here is drawn at random, and this model stays the
+--     account of what error there is without chance.
 --   - Cost, which is effort.allium's, and hints, which are reach.allium's. A
 --     mistaken belief is never offered as a hint. So this model reads
 --     repertoire, capacity, spans, marking, order, fixation, upkeep and
@@ -150,7 +151,7 @@ config {
 ------------------------------------------------------------
 
 rule BeginRun {
-    when: Attempt(givens, profile)
+    when: Tackle(givens, profile)
 
     requires: solution_count(givens, config.side) = 1
 
@@ -299,14 +300,18 @@ invariant SolvedMeansFilledAndConsistent {
 -- Surfaces
 ------------------------------------------------------------
 
-surface Attempting {
+surface Tackling {
     provides:
-        Attempt(givens, profile)
+        Tackle(givens, profile)
 
     @guarantee OnlyAGuessIsEverWrong
         -- A grid is born kept, upkeep and checks strike only what a placed
         -- peer rules out, and a deduction read from marks that allow
-        -- too much is sound. So while no guess stands, every digit in the
+        -- too much is sound. That holds of the two uniqueness techniques
+        -- too, by technique.allium's UniquenessPatterns: the promise a run
+        -- makes its grid is of the givens it began from, which are
+        -- well-posed, and lapsed marks hide those patterns and never fake
+        -- them. So while no guess stands, every digit in the
         -- grid is the solution's. A solved run's grid is the solution, since
         -- a full grid with no contradiction is one and the puzzle has one.
 
@@ -315,7 +320,7 @@ surface Attempting {
         -- same guesses and the same end, every time.
 }
 
-surface AttemptResult {
+surface TackledRun {
     context run: Run
 
     exposes:
@@ -342,16 +347,16 @@ surface AttemptResult {
 -- Open Questions
 ------------------------------------------------------------
 
-open question "guess_for: which cell and which digit. solver.allium guesses on a cell with the fewest candidates; does a person, on their marks, and does a player with no marks guess by sight?"
+open question "guess_for: which cell and which digit. solver.allium guesses on a cell with the fewest candidates; does a person, on their marks, and does a player with no marks guess by sight? human-solving.allium's GuessesAndRecovery draws a cell by attention and a digit uniformly; what this model does without a draw is still open."
 
 open question "Does every run end? A repair strikes the guessed digit, as solver.allium's split does, which suggests it does; but checks and guesses alternate here and it has not been shown."
 
-open question "Repair restores the grid perfectly. The source asks a careful solver to keep a clean snapshot; does a novice, or do they erase what they remember and leave the rest?"
+open question "Repair restores the grid perfectly. The source asks a careful solver to keep a clean snapshot; does a novice, or do they erase what they remember and leave the rest? human-solving.allium has no free snapshot: each change is recalled or read back and undone at a cost, and may be misremembered. Whether this model keeps the perfect repair as its stated simplification is still open."
 
-open question "A contradiction is seen the moment it stands. With lapsed marks a conflict can sit unnoticed; should noticing be bounded by spans as seeing a deduction is?"
+open question "A contradiction is seen the moment it stands. With lapsed marks a conflict can sit unnoticed; should noticing be bounded by spans as seeing a deduction is? In human-solving.allium a contradiction must be observed before anything is repaired."
 
 open question "Does a check bring every mark up to date, or only those the player's spans take in, and should a player with no marks check at all? As stated one check leaves nothing stale, so every later fruitless look before the guess changes nothing and only counts."
 
-open question "The stochastic layer: slip rates for a misread digit, a mark wrongly struck and a mark never written, drawn through the randomness port and reproducible by seed. Which of them, and on which profile fields?"
+open question "The stochastic layer is human-solving.allium, a model of its own and not a layer on this one: misreading, faulty inference and slips of the pen, drawn through the randomness port and reproducible by seed. What is left to ask here is whether this model should stay wholly deterministic beside it, which is how it is stated."
 
 open question "Should steps be the only measure, or should a run also report guesses made, guesses withdrawn and checks, which a rating could weigh differently?"

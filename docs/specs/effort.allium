@@ -3,14 +3,18 @@
 -- Effort — what a puzzle takes out of a player
 --
 -- Scope
---   The second of three models of a player, and the one in which a limit
+--   The second of four models of a player, and the one in which a limit
 --   makes things dear. Nothing is hidden and nothing is wrong: every step
 --   has a price, the price is the player's own, and a puzzle is rated by
 --   what it costs them from the first step to the last. Where the player's
 --   profile gives out, the run goes on past it and says so, so that every
 --   puzzle the catalogue can finish is priced end to end for every player.
---   reach.allium and lapse.allium model the same player differently and none
---   of the three imports another.
+--   reach.allium, lapse.allium and human-solving.allium model the same
+--   player differently and none of the four imports another.
+--   human-solving.allium also counts effort, from the bottom up: every look,
+--   thought and mark is a paid microstep and a price is what they add up to
+--   in one seeded attempt. Here a price is read from the top down, off the
+--   deduction taken, and is the same every time.
 --   This module is coarse. Its lifecycle, its steps and the shape of a price
 --   are stated; the figures, the count of search and what fatigue does are
 --   open questions, and nothing should be built on them yet.
@@ -63,7 +67,8 @@ entity Run {
     status: looking | stepping | solved | unpriced
 
     -- A run looks and steps by turns and ends solved, or unpriced where the
-    -- puzzle needs a technique the catalogue names and does not specify.
+    -- puzzle needs something beyond the catalogue: one of the families
+    -- technique.allium defers, or a chain past its limits.
     transitions status {
         looking -> stepping
         stepping -> looking
@@ -295,12 +300,14 @@ surface PricedRun {
 
 open question "The base figures. Sudoku Explainer's scale is the likeliest start, but it prices a hidden single in a box below one in a line, which here is extent and not technique. One figure per technique, or per technique and extent?"
 
-open question "search_effort: what is counted as examined before a find (units, cells, digits), how order and fixation change it, and whether an unsystematic player pays less search for a dearer find."
+open question "search_effort: what is counted as examined before a find (units, cells, digits), how order and fixation change it, and whether an unsystematic player pays less search for a dearer find. human-solving.allium's EffortAccounting and ChoiceAndBias answer it for a seeded attempt, one paid inspection at a time; still open is the figure this deterministic model should read, which might be that model's expectation."
 
-open question "fatigue: does every profile.fatigue of effort spent take one from capacity, and does a run that passes profile.budget end, or only report it?"
+open question "fatigue: does every profile.fatigue of effort spent take one from capacity, and does a run that passes profile.budget end, or only report it? In human-solving.allium fatigue raises error and lowers notice and never touches capacity, and the effort limit ends an attempt; the two models need not agree, but the difference should be chosen."
 
-open question "Upkeep is free here. Marking a grid up and striking after each placement is real work for a player who keeps marks; should it be priced, and should a player with no marks pay nothing and find less?"
+open question "Upkeep is free here. Marking a grid up and striking after each placement is real work for a player who keeps marks; should it be priced, and should a player with no marks pay nothing and find less? human-solving.allium prices every note written and erased."
 
-open question "An unpriced run: what should a rating say of a puzzle that needs a named technique with no precondition yet? It resolves itself as technique.allium specifies more of the ladder."
+open question "An unpriced run: what should a rating say of a puzzle the catalogue cannot finish? Every named technique is now specified, so this is a puzzle that needs a deferred family, a chain past technique.allium's limits, or a guess."
+
+open question "Pricing a variable load. For colouring, chains, forcing chains and BUG+1 a deduction's load is the count of candidate propositions in its proof, which may be many times any capacity; base_figure * load / capacity was written for loads of one to four. Is a long chain priced by its length, by what is held at once, or by its base figure alone?"
 
 open question "Should the cheapest deduction be taken, as here, or the one reach.allium would take, priced? The first is the least a puzzle can cost this player; the second is what it would."

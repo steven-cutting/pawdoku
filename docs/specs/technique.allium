@@ -6,13 +6,17 @@
 --   The named techniques a person solves Sudoku by, stated once: when each
 --   holds on a grid of digits and candidates, what it places or strikes, and
 --   what it asks of whoever would find it. And the profile of a player, which
---   says how much of that one person can find. It is the ground three baseline models
---   of a player stand on. reach.allium has a limit hide a deduction,
---   effort.allium has it make one dear, and lapse.allium has it lead a player
---   into guessing; none of them says again what a hidden pair is.
---   human-solving.allium adds attention, fallible beliefs and repeated
---   assessment; it shares the logic here, not the baseline Profile or Grid
---   as a representation of a person's knowledge.
+--   says how much of that one person can find. It is the ground four models
+--   of a player stand on, none of which imports another. reach.allium has a
+--   limit hide a deduction, effort.allium has it make one dear, and
+--   lapse.allium has it lead a player into guessing; human-solving.allium has
+--   it change what is noticed, kept in mind and got wrong, by chance. None of
+--   them says again what a hidden pair is. The first three read the Profile
+--   and keep the Grid stated here. human-solving.allium shares the catalogue
+--   and its proofs, keeps its own sheet and mind in place of the Grid, owns a
+--   finer description of a player, and states the projection from that
+--   description to this Profile, so that one player can be put through all
+--   four.
 --   Sources: docs/explanation/solving-sudoku.md, for the techniques, their
 --   names and the order a careful solver tries them in, and Cowan (2001),
 --   "The magical number 4 in short-term memory", Behavioral and Brain
@@ -32,7 +36,8 @@
 --     which digits, and what it places or strikes.
 --   - The profile: repertoire, capacity, spans, marking, order, fixation,
 --     upkeep, budget, fatigue and patience, and two presets, novice and
---     expert. Each baseline model reads the fields it needs.
+--     expert. reach, effort and lapse each read the fields they need;
+--     human-solving.allium projects its own description onto them.
 --
 -- Excludes
 --   - Which deduction a player takes, what a missed one costs, and when a
@@ -68,6 +73,14 @@
 --   takes in. Pointing and claiming, never box-line reduction. Cross-hatch, a
 --   hidden single read from the placed digits alone, in a box or, by the same
 --   crossing-out, in a line. Subset for a pair, a triple or a quad.
+--   For the patterns past subsets: bivalue, of an open cell with two
+--   candidates; conjugate pair, a digit's only two places in a unit. Link,
+--   two candidates joined weakly (at most one is true) or strongly (at least
+--   one is); literal, a candidate asserted or denied; path, literals each
+--   following from the last by one link. Base and cover, the two sets of
+--   lines a fish is read across. Proof, the units, links and paths a
+--   deduction rests on; witness, one particular place a technique holds,
+--   with its proof, as against the technique holding somewhere.
 
 use "./sudoku.allium" as sudoku
 
@@ -200,7 +213,8 @@ value Profile {
 
     -- A coarse load ceiling. Cowan's conditional chunk estimates motivate
     -- testing small capacities; they do not measure Sudoku cells or fix an
-    -- individual's capacity. The richer model counts retained facts/chunks.
+    -- individual's capacity. human-solving.allium counts retained facts and
+    -- chunks instead.
     capacity: Integer
 
     -- The extents the player takes in. A set and not a ceiling, so that a
@@ -499,9 +513,15 @@ config {
     side: Integer = sudoku/config.side
 
     -- Finite catalogue proof limits, independent of a player's smaller
-    -- reasoning/memory limits. Changing either changes catalogue version.
+    -- reasoning/memory limits. Changing either changes catalogue_version.
     max_chain_links: Integer = 24
     max_forcing_paths: Integer = 9
+
+    -- Names this catalogue: which techniques are specified, their exact
+    -- variants and the two limits above. A model that records what it was
+    -- run against, as human-solving.allium does, records this. It moves when
+    -- any of them does and not when a comment or a profile preset does.
+    catalogue_version: String = "technique-2"
 }
 
 ------------------------------------------------------------
@@ -562,10 +582,10 @@ default Technique hidden_quad = {
     rank: 12, family: hidden_subsets, reads_marks: true, load: 4, is_specified: true
 }
 
--- These loads are provisional baseline costs, not measurements of human
--- working memory. A variable load is the number of distinct candidate
--- propositions in the proof (at least one). The richer model uses explicit
--- retained facts and its own learned chunks instead of this shortcut.
+-- These loads are provisional costs, not measurements of human working
+-- memory. A variable load is the number of distinct candidate propositions
+-- in the proof (at least one). human-solving.allium uses explicit retained
+-- facts and its own learned chunks instead of this shortcut.
 
 default Technique x_wing = {
     rank: 13, family: fish, reads_marks: true, load: 2, is_specified: true
@@ -654,8 +674,8 @@ default Profile novice = {
     patience: 3
 }
 
--- Someone who knows the supported catalogue. The baseline capacity may
--- still hide a long proof; knowledge and capacity remain distinct.
+-- Someone who knows the supported catalogue. Their capacity may still hide
+-- a long proof; knowledge and capacity remain distinct.
 default Profile expert = {
     repertoire: {
         full_unit, cross_hatch, naked_single, hidden_single,
@@ -983,7 +1003,19 @@ surface Catalogue {
         -- writing a guess and playing its branch is a model action instead.
 
     @guarantee UniquenessPatterns
-        -- Both require uniqueness_promised and sound standing information.
+        -- Both require uniqueness_promised and, as DeductionsAreSound does
+        -- of every technique, candidates that may be extra and are never
+        -- missing: a stale candidate does not make either unsound.
+        -- Unique Rectangle: the solution's digits at the four open corners
+        -- are among their marks, so were the fourth corner a or b the
+        -- corners would hold a and b alternately, and exchanging the two is
+        -- a second solution whatever else is marked. BUG+1: in a unit the
+        -- stale cell shares with the placed peer, two candidates to each
+        -- open cell are exactly used up by two places to each unplaced
+        -- digit, so a candidate for a placed digit cannot stand there and
+        -- the count below fails. Were the removed candidate itself the
+        -- stale one, what is left would be a true BUG, which a grid with one
+        -- solution never reaches. Stale marks hide a BUG and never fake one.
         -- Unique Rectangle Type 1: four open cells occupy two rows, two
         -- columns and exactly two boxes. Three have exactly {a,b}; the
         -- fourth has both plus extras. Strike a,b from the fourth.
@@ -1072,9 +1104,43 @@ surface Catalogue {
 -- Catalogue boundary
 ------------------------------------------------------------
 
--- Reducible subsets remain valid. Reconstructing a complete cell candidate
--- set by inspecting peers is the human model's work; its final singleton is
--- naked_single, with no new technique name or free eight-digit chunk.
 -- Partial notes, general reasoning and speculative guesses are model
 -- behaviour, not new catalogue entries. Deferred families are listed in
 -- Excludes; expanding them requires new proof obligations and fixtures.
+
+------------------------------------------------------------
+-- Resolved Questions
+------------------------------------------------------------
+
+-- This module once named nine techniques without specifying them and asked
+-- nine questions. The catalogue as it now stands answers eight of them:
+--   Placing by counting a cell's placed peers: no technique of its own.
+--     Reconstructing the cell's candidates is a model's work and the final
+--     singleton is naked_single, load one, with no free eight-digit chunk.
+--   Refusing a reducible subset: no. A naked subset with a single-candidate
+--     cell, or a hidden one with a smaller subset inside, stays licensed; a
+--     systematic player takes the smaller pattern first by the ladder.
+--   Fish: BasicFish. Finned and sashimi fish are deferred, in Excludes.
+--   Wings: Wings. w_wing belongs beside xy_wing and xyz_wing.
+--   simple_colouring: SimpleColouring. Its load is variable, below.
+--   chain: several techniques and not one. skyscraper, two_string_kite,
+--     empty_rectangle, remote_pair, x_chain, xy_chain and
+--     alternating_inference_chain, by SingleDigitPatterns, RemotePairs and
+--     AlternatingChains; grouped chains are deferred.
+--   uniqueness_test: unique_rectangle_type_1 and bug_plus_one, by
+--     UniquenessPatterns. A rating may lean on them and a hint may not: the
+--     keeper states uniqueness_promised, true of givens sudoku.allium has
+--     set and false of a puzzle in play whose entries nobody has verified.
+--   nishio: a bounded contradiction test that writes nothing is a technique,
+--     forcing_chain, by BoundedForcingChains. Writing a digit and playing
+--     the branch is a guess and a model's. Unrestricted Nishio is deferred.
+-- The ninth, partial marking, is answered only in human-solving.allium,
+-- whose notes may be partial, and stands below for this module's Marking.
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open question "Partial marking, such as writing a digit only where it has two places in a box: is it a third Marking, and which techniques can read it? human-solving.allium's notes may be partial and claim coverage separately; the Profile's Marking is still none or full, so reach, effort and lapse cannot describe such a player."
+
+open question "Loads and ladder order past subsets are provisional. A variable load counts the candidate propositions of the proof, which puts a long chain beyond every capacity Cowan suggests and so hides it from an expert in reach.allium and lapse.allium. Is that right, should a chain be held link by link, and is rank 13 to 29 the order a careful solver tries them in?"

@@ -16,7 +16,7 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 The game adds a row for every term its specification names. The Sudoku terms are
 `sudoku.allium`'s, which picks one word where the game's literature has several, the
 solving terms are `solver.allium`'s, and the terms of a person solving are
-`technique.allium`'s, its three baseline models' and `human-solving.allium`'s.
+`technique.allium`'s and its four models'.
 
 | Term | Meaning |
 | --- | --- |
@@ -50,10 +50,16 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Subset | A pair, a triple or a quad, naked or hidden. |
 | Cross-hatch | A hidden single read from the placed digits alone, with no marks, in a box or a line. |
 | Pointing, claiming | A box whose places for a digit lie on one line, and a line whose places lie in one box. Never box-line reduction. |
-| Profile | A parameterized player. The baseline `technique/Profile` has repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience. The richer `human-solving/PlayerProfile` separates ability, experience, biases and coping. |
-| Load, capacity | Baseline load is a coarse per-proof figure. In the richer model capacity bounds simultaneously retained chunks, including pending reasoning and unwritten branch data. Neither is a count of Sudoku cells or an intelligence score. |
+| Bivalue, conjugate pair | An open cell with two candidates, and a digit's only two places in a unit. |
+| Link, literal, path | Two candidates joined weakly (at most one is true) or strongly (at least one is); a candidate asserted or denied; literals each following from the last by one link. |
+| Base, cover | The two sets of lines a fish is read across: the digit's places in the bases lie in the covers, and it is struck from the rest of the covers. |
+| Proof, witness | The units, links and paths a deduction rests on, and one particular place a technique holds, with its proof, as against the technique holding somewhere. |
+| Uniqueness promise | The premise that the givens have one solution, stated by whoever keeps a grid and never inferred. A rating makes it; a hint over a player's unverified entries does not. |
+| Profile | A parameterized player. `technique/Profile` has repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience, and `reach`, `effort` and `lapse` read it. `human-solving/PlayerProfile` separates ability, experience, biases and coping. |
+| Projection | `human-solving.allium`'s statement of the `technique/Profile` a `PlayerProfile` in an environment amounts to, so that one player can be put through all four models. |
+| Load, capacity | In `technique.allium` load is a coarse per-proof figure and capacity its ceiling. In `human-solving.allium` capacity bounds simultaneously retained chunks, including pending reasoning and unwritten branch data. Neither is a count of Sudoku cells or an intelligence score. |
 | Extent, span | How much of the grid a deduction is read across, and an extent a player takes in. |
-| Run | One player model put to one set of digits. It looks, steps and looks again. Each model has its own. |
+| Run | One player model put to one set of digits. It looks, steps and looks again. Each model has its own; `human-solving.allium` calls its run an attempt and its step a microstep. `Rate`, `Price`, `Tackle` and `Simulate` ask for one of each. |
 | Step | A deduction taken; in `lapse.allium` also a check, a guess or a repair. |
 | See, stall | In `reach.allium`: a deduction the profile does not hide is seen, and a run that sees nothing in an unfilled grid stalls. |
 | Price, escalation | In `effort.allium`: what a step costs this player, and a step taken from beyond their profile. |
@@ -62,12 +68,13 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Microstep | One paid action such as attending, inspecting a fact, rehearsing, inferring, writing a note or committing a digit. An unsuccessful action is still recorded. |
 | Fact, belief | One proposition acquired or derived by the simulated person. It has provenance and confidence and can be false; a coverage assertion does not contain all the facts it summarizes. |
 | Chunk | A bounded group of learned, recognized facts occupying one working-memory slot. Arbitrary bundles do not qualify. |
+| Note, entry | In `human-solving.allium`: one cell's written marks together with a claim of coverage, and a digit standing on the sheet, given or written by the player. A mark is still one written candidate. |
 | Sheet | Actual entries, external candidate notes and deliberately written branch records, separate from mental beliefs and observer knowledge. |
 | Coverage | An assertion that all alternatives of one cell, or all positions for one digit in a unit, were checked. Missing partial notes do not establish coverage. |
 | Observer | The independent evaluator that can inspect full traces and solution truth; its judgements do not steer the simulated person. |
 | Assessment | Results from a declared seed list under one fixed condition, retaining counts, distributions and every attempt rather than a universal scalar difficulty. |
 | Familiar recognition, elementary derivation | A learned pattern shortcut, and explicit reasoning from acquired Sudoku premises. Deriving an unfamiliar pattern does not make it familiar. |
-| Fatigue, frustration | Bounded transient states altered by spent effort, fruitless search, perceived progress and rest; independent of fixed experience. |
+| Fatigue, frustration | Bounded transient states altered by spent effort, fruitless search, perceived progress and rest; independent of fixed experience. `technique/Profile`'s fatigue and patience are coarser figures under the same words: the effort that takes one from capacity, and the fruitless looks before a guess. |
 
 ## The repository
 

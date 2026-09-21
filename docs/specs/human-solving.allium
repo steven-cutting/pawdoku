@@ -3,6 +3,10 @@
 -- Human solving — a fallible, bounded attempt and its assessment
 --
 -- Scope
+--   The fourth of four models of a player, and the one in which a limit
+--   changes what is noticed, kept in mind and got wrong, by chance.
+--   reach.allium, effort.allium and lapse.allium model the same player
+--   without chance and none of the four imports another.
 --   Simulate a person solving fresh classic Sudoku from its givens, and
 --   assess difficulty relative to a declared profile and environment over
 --   repeated seeded attempts. An attempt includes looking without finding,
@@ -17,7 +21,10 @@
 --   - Manual/automatic notes, highlighting, feedback and uniqueness premise.
 --   - Named pattern recognition, bounded elementary reasoning, and guesses.
 --   - Within-attempt fatigue, frustration and rest, with fixed learned skills.
---   - Four provisional experience presets on the same cognitive baseline.
+--   - Four provisional experience presets on one standard ability.
+--   - The projection from this module's description of a player to
+--     technique.allium's Profile, so that one player can be put through
+--     reach, effort and lapse as well.
 --
 -- Excludes
 --   - Runtime/UI implementation, persistence, puzzle generation and hints.
@@ -25,14 +32,39 @@
 --   - Diagnoses, intelligence scores, predictions in minutes, calibrated
 --     population probabilities, and a single universal difficulty number.
 --   - An exhaustive expert repertoire or an unbounded solution search.
---   - Changing reach, effort or lapse into this model. They remain independent
---     coarse comparisons with their own Profile and assumptions.
+--   - Changing reach, effort or lapse into this model, or this one into
+--     them. Each answers differently what a limit does, several of their
+--     open questions name the answer given here, and they stay without
+--     chance.
+--   - The random generator. Draws come from this game's randomness port;
+--     what this module states is how a draw becomes a decision.
 --
 -- Dependencies
---   sudoku.allium owns the rules; technique.allium owns logical techniques.
+--   sudoku.allium owns the rules; technique.allium owns logical techniques
+--   and the Profile this module projects onto. It keeps no technique/Grid:
+--   a Grid has one set of marks and licenses whatever they support, where a
+--   person has a sheet and a mind that may disagree and finds only what
+--   they look for.
 --   An exact evaluator may establish well-posedness and judge an attempt.
 --   Its solution and deductions are never player inputs. An explicitly
 --   enabled feedback aid may reveal only the queried entry's error signal.
+--
+-- Vocabulary
+--   technique.allium's words stand: technique, deduction, placement, strike,
+--   candidate, mark, load, proof, witness. Attempt is this model's run, one
+--   seeded solve from the givens to a stopping reason, and microstep its
+--   step; they have names of their own because a microstep is far smaller
+--   than a deduction and most of them deduce nothing. Sheet, what is
+--   physically written, against mind, what is believed; neither is
+--   technique.allium's grid. Entry, a digit standing on the sheet, a given or
+--   a placement the player wrote. Note, one cell's written marks together
+--   with a claim of coverage; a mark is still one written candidate. Fact, a
+--   proposition the player has acquired, which may be false; chunk, facts
+--   held as one. Observer, the judge that sees the solution and never steers.
+--   Capacity here counts retained chunks, fatigue is a state between zero and
+--   one, and patience counts fruitless episodes; technique.allium's Profile
+--   uses the same three words for coarser figures, and the projection below
+--   says how they meet.
 
 use "./sudoku.allium" as sudoku
 use "./technique.allium" as technique
@@ -424,8 +456,13 @@ entity AssessmentRun {
 
 config {
     model_version: String = "human-solving-1"
-    catalogue_version: String = "technique-2"
-    random_version: String = "lcg32-1"
+
+    -- technique.allium's, restated as its figures are elsewhere.
+    catalogue_version: String = technique/config.catalogue_version
+
+    -- Names the randomness port's seeded stream. The generator is the
+    -- port's; a different generator is a different name.
+    random_version: String = "seeded-stream-1"
 }
 
 default CognitiveAbility standard_ability = {
@@ -701,9 +738,39 @@ contract CognitiveOperations {
         -- entire hidden solution as one Effect violates this contract.
 }
 
+-- One player, four models. reach, effort and lapse read technique.allium's
+-- Profile, so a player described here is put to them through this.
+contract Projection {
+    coarse_profile: (
+        profile: PlayerProfile, environment: Environment, limits: Limits
+    ) -> technique/Profile
+
+    @invariant ProjectionToTheCoarseProfile
+        -- What is projected, field by field:
+        --   repertoire: experience.familiar.
+        --   capacity: ability.capacity.
+        --   marking: full_marks if the environment has manual notes or
+        --     automatic candidates, else no_marks.
+        --   fixation: unfixed if area_fixation and digit_fixation are both
+        --     zero; else nearby if area_fixation is the greater or they are
+        --     equal; else same_digit.
+        --   patience: coping.patience.
+        -- Five fields have nothing here to be read from and take a stated
+        -- provisional figure, each an open question below: spans, every
+        -- extent; order, systematic; upkeep, every kind of unit; budget,
+        -- limits.effort; fatigue, limits.effort, so that capacity never
+        -- falls within budget.
+        -- The projection reads nothing else and is the same every time. It
+        -- loses what the Profile cannot say: chance, fluency, partial notes,
+        -- and elementary reasoning, so that rules_only projects to an empty
+        -- repertoire and stalls in reach.allium at once while the same
+        -- player here can still derive a single.
+}
+
 surface Simulation {
     contracts:
         fulfils CognitiveOperations
+        fulfils Projection
 
     provides:
         Simulate(request)
@@ -965,10 +1032,11 @@ surface AttemptResult {
         -- model_version, catalogue_version and random_version yield identical
         -- action order, draws, state changes, effort and outcome, disregarding
         -- run identifiers. Record all these inputs and every consumed draw.
-        -- lcg32-1 uses state=seed initially; each draw advances state to
-        -- (1664525*state+1013904223) modulo 4294967296, then returns
-        -- state/4294967296 with draw indices from zero. Integer arithmetic
-        -- is exact. A Bernoulli outcome is u<p; a uniform n-way index is
+        -- Draws are the randomness port's: a stream of u in [0,1), begun
+        -- from the seed, indexed from zero, the same for the same seed and
+        -- random_version. Which generator is the port's and not stated
+        -- here; a test supplies the draws through the port's fake.
+        -- A Bernoulli outcome is u<p; a uniform n-way index is
         -- floor(u*n); weighted choice is the first cumulative interval
         -- containing u*sum(weights), intervals closed left/open right.
         -- Draw even for p=0 or p=1. Selection gates run note, verification,
@@ -1081,6 +1149,13 @@ surface Acceptance {
         -- pattern may be recognized; an unfamiliar one requires elementary
         -- steps and may be completed within its bounds without being learned.
 
+    @guarantee PresetsMeetTheCoarsePresets
+        -- expert_player under paper projects to technique/expert's
+        -- repertoire, capacity and marking, and beginner to
+        -- technique/novice's repertoire. Changing only ability.capacity
+        -- changes only the projected capacity, and changing only
+        -- experience.familiar only the repertoire.
+
     @guarantee PartialNotesAndHiddenInformation
         -- A cell with only a written 4 but no coverage claim cannot produce
         -- a sound naked single. Reading another cell must not reveal its
@@ -1109,3 +1184,19 @@ surface Acceptance {
         -- successful distribution, not zero effort. Aggregate every declared
         -- run and retain successful and unsuccessful traces.
 }
+
+------------------------------------------------------------
+-- Open Questions
+------------------------------------------------------------
+
+open question "Every numerical default here is a model assumption and none is calibrated: abilities, biases, coping, costs, limits and the four presets' fluency and chunk sizes. What evidence would move one, and which are fixed first? explanation/human-solving.md owns the route to validation."
+
+open question "The projection gives spans every extent, order systematic and upkeep every kind of unit, because nothing here says otherwise. Should attention_cells bound spans, should the fixations or familiar_preference make an order unsystematic, and should note_use or automatic candidates decide upkeep?"
+
+open question "The projection reads budget from limits.effort and gives fatigue the same figure so that it never bites. effort.allium's unit is a base figure per deduction and this module's is a microstep cost; are the two commensurable at all, or should budget and fatigue be left to whoever asks for a price?"
+
+open question "The presets do not quite meet. technique/novice holds three and keeps no marks; beginner holds four on paper with notes. technique/expert is unfixed; expert_player has the standard biases and projects to nearby. Should one side move, or are novice and beginner different people?"
+
+open question "rules_only projects to an empty repertoire, which reach.allium stalls on at once, though this model lets the same player derive singles by elementary reasoning. Should the projection credit a floor of techniques every rule-knower can derive, and which?"
+
+open question "PlayerProfile, Environment and the projection live here, so anything that wants a hint from reach.allium for one of these presets imports this whole module. Should the three move to a small module both import, once something needs them?"

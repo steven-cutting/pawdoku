@@ -3,15 +3,17 @@
 -- Reach — how far a player gets, and what they would find next
 --
 -- Scope
---   The first of three models of a player, and the one in which a limit
+--   The first of four models of a player, and the one in which a limit
 --   hides things. A deduction the player does not know, cannot hold, cannot
 --   take in or cannot read is not there for them, and that is the whole of
 --   it: what is left is found at no cost and never wrongly. Put to a set of
 --   givens it says how far such a player gets, by which techniques, and
 --   where they stop. Put to a puzzle in play it says what that player would
---   find next, which is a hint pitched at them. effort.allium and
---   lapse.allium model the same player differently and none of the three
---   imports another.
+--   find next, which is a hint pitched at them. effort.allium,
+--   lapse.allium and human-solving.allium model the same player differently
+--   and none of the four imports another. A player described in
+--   human-solving.allium's finer terms is put to this model through the
+--   projection it states.
 --   Source: docs/explanation/solving-sudoku.md, for the workflow a
 --   systematic player follows.
 --
@@ -416,6 +418,6 @@ surface RunResult {
 
 open question "A hint over a digit that fits and is wrong: the puzzle is consistent, so NextStep is offered, but the grid is no longer true and a licensed deduction may be unsound or the grid may contradict. Should the hint say the digit is wrong, using the solution, or refuse?"
 
-open question "Does a richer profile always reach at least as far? It does if every order ends at the same grid, which holds for a systematic player with every span; whether a fixation or a missing span can close off a deduction for good is not shown."
+open question "Does a richer profile always reach at least as far? It does if every order ends at the same grid, which holds for a systematic player with every span; whether a fixation or a missing span can close off a deduction for good is not shown. technique.allium's ExtraCandidatesHideAndNeverMislead now says outright that it is no monotonicity claim: past subsets, a strike one player takes can change the shape another pattern needed, so the answer may be no even for a systematic player."
 
 open question "Should a rating of a stalled run name the lowest technique that would have moved it, as effort.allium does by escalating, or is that effort.allium's alone?"

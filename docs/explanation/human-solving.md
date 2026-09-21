@@ -21,7 +21,7 @@ The [strategy survey](solving-sudoku.md), originally requested as
 This page owns the rationale, evidence limits, tuning guide and route from those
 contracts to validation. The Allium clauses remain authoritative.
 
-## Four comparisons, one logical catalogue
+## Four models, one logical catalogue
 
 | Model | What a limitation does | Appropriate interpretation |
 | --- | --- | --- |
@@ -30,12 +30,28 @@ contracts to validation. The Allium clauses remain authoritative.
 | [Lapse](../specs/lapse.allium) | Lets candidates become stale, eventually prompting a guess. | A coarse comparison with perfect initial candidates and deterministic behaviour. |
 | [Human solving](../specs/human-solving.allium) | Changes observation, retention, reasoning, confidence and recovery. | A distribution of fallible attempts under stated conditions. |
 
-The three baseline models keep their existing profile and assumptions. The richer
-model has its own profile: experience need not imply greater cognitive capacity,
-and an expert need not notice every available move. Extending the shared catalogue
-can change the baseline models' results, but does not give them the richer model's
-attention or error mechanisms. Rating runs supply an explicit uniqueness premise;
-unverified hint grids do not.
+The four are peers: each is a different answer to what a limit does, none imports
+another, and they are meant to be read side by side as alternative views of how hard
+a puzzle is for one player. Reach, effort and lapse are deterministic and read
+`technique.allium`'s coarse `Profile`. Human solving is stochastic and describes a
+player more finely, because experience need not imply greater cognitive capacity
+and an expert need not notice every available move.
+
+One player goes through all four by the projection `human-solving.allium` states
+in `ProjectionToTheCoarseProfile`: the repertoire is what is familiar, capacity is
+capacity, marking follows the note aids, fixation follows the stronger of the two
+fixation biases, and patience is patience. Spans, order, upkeep, budget and fatigue
+have no finer source and take stated provisional figures, each recorded as an open
+question. The projection loses what the coarse profile cannot say, most visibly
+elementary reasoning: a rules-only novice projects to an empty repertoire and stalls
+in reach at once, while the same player here can still derive a single.
+
+Several open questions in `effort.allium` and `lapse.allium` — search effort, the
+cost of upkeep, slips, imperfect repair, an unnoticed contradiction — are answered
+here for a seeded attempt, and those questions now say so. They stay open for the
+deterministic models, which are not layers under this one. Extending the shared
+catalogue changes all four models' results. Rating runs supply an explicit
+uniqueness premise; unverified hint grids do not.
 
 ## What is known, believed and independently judged
 
@@ -226,10 +242,14 @@ change, then separately for each actual edit. Failed recognition, repeated
 inspection and skipped verification consume effort too. The resulting total is
 not a prediction of elapsed time.
 
-The initial version identifiers are `human-solving-1`, `technique-2` and
-`lcg32-1`. The specification pins the seed-to-draw mapping, draw order and
-sampling conventions. The simple initial stream is a reproducibility convention,
-not evidence that the simulation's output probabilities match human behaviour.
+The initial version identifiers are `human-solving-1`, `technique-2` — which
+`technique.allium` declares as its `catalogue_version` — and `seeded-stream-1`.
+Draws come from the game's randomness port, as every side effect does: the port
+owns the generator and its name, and a test supplies draws through the port's fake.
+The specification pins what a draw means — the draw order, the sampling conventions
+and that every draw is recorded — so a run replays exactly under one named stream.
+That is a reproducibility convention, not evidence that the simulation's output
+probabilities match human behaviour.
 
 ## Named technique coverage
 
