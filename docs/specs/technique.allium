@@ -6,30 +6,33 @@
 --   The named techniques a person solves Sudoku by, stated once: when each
 --   holds on a grid of digits and candidates, what it places or strikes, and
 --   what it asks of whoever would find it. And the profile of a player, which
---   says how much of that one person can find. It is the ground three models
+--   says how much of that one person can find. It is the ground three baseline models
 --   of a player stand on. reach.allium has a limit hide a deduction,
 --   effort.allium has it make one dear, and lapse.allium has it lead a player
 --   into guessing; none of them says again what a hidden pair is.
+--   human-solving.allium adds attention, fallible beliefs and repeated
+--   assessment; it shares the logic here, not the baseline Profile or Grid
+--   as a representation of a person's knowledge.
 --   Sources: docs/explanation/solving-sudoku.md, for the techniques, their
 --   names and the order a careful solver tries them in, and Cowan (2001),
 --   "The magical number 4 in short-term memory", Behavioral and Brain
 --   Sciences 24, for how much is held in mind at once.
 --
 -- Includes
---   - The catalogue: every technique the source names, in ladder order, with
+--   - The supported catalogue in ladder order, with
 --     its family, whether it reads marks, and what it loads a mind with. The
---     ladder through subsets is specified here; the rest is named and no more.
+--     ladder is a conventional comparison order, not a cognitive law.
 --   - The grid a technique is read from: cells with digits and candidates,
 --     and the units they sit in. One grid serves a set of givens and a puzzle
 --     in play alike, and a model may keep more than one.
---   - Twelve techniques in full: full unit, cross-hatch, naked single, hidden
---     single, pointing, claiming, and naked and hidden pairs, triples and
---     quads.
+--   - Twenty-nine techniques, through basic fish, wings, single digit
+--     patterns, colouring, bounded chains and two uniqueness patterns.
+--     Catalogue guarantees pin their exact supported variants and proofs.
 --   - Deductions: one for each place a technique holds, saying where, with
 --     which digits, and what it places or strikes.
 --   - The profile: repertoire, capacity, spans, marking, order, fixation,
 --     upkeep, budget, fatigue and patience, and two presets, novice and
---     expert. Every model is handed the same profile and reads what it needs.
+--     expert. Each baseline model reads the fields it needs.
 --
 -- Excludes
 --   - Which deduction a player takes, what a missed one costs, and when a
@@ -39,8 +42,9 @@
 --     candidates only when the grid's keeper strikes it; this module says
 --     which candidates are stale and no more, because how well marks are
 --     kept is the very thing lapse.allium varies.
---   - The preconditions of fish, wings, colouring, chains, uniqueness tests
---     and Nishio. Each is named, ranked and left as an open question.
+--   - Finned, sashimi and other complex fish, grouped AICs, almost locked
+--     sets, forcing nets, other uniqueness patterns and unrestricted Nishio.
+--     These are deferred, not aliases for the supported patterns.
 --   - Chance. Nothing here is drawn at random; a profile is a fixed set of
 --     figures and the same grid licenses the same deductions every time.
 --   - How a grid is stored, how deductions are found quickly, and the order
@@ -80,8 +84,10 @@ enum Family {
 }
 
 -- How much of the grid a deduction is read across, narrowest first: a cell's
--- own marks; one box; one row or column; a box and a line through it.
-enum Extent { one_cell | one_box | one_line | box_and_line }
+-- own marks; one box; one row or column; a box and a line; several units.
+enum Extent { one_cell | one_box | one_line | box_and_line | multiple_units }
+
+enum LinkKind { weak | strong }
 
 -- Whether the player writes candidates down. A player who does not has only
 -- the techniques that read placed digits.
@@ -129,13 +135,43 @@ value Strike {
     digits: Set<Integer>
 }
 
+-- A candidate proposition: this cell holds this digit. A literal states
+-- that proposition or its negation. Links use the unchanged input grid.
+value CandidateRef {
+    position: sudoku/Position
+    digit: Integer
+}
+
+value Literal {
+    candidate: CandidateRef
+    positive: Boolean
+}
+
+value Link {
+    left: CandidateRef
+    right: CandidateRef
+    kind: LinkKind
+}
+
+value InferencePath {
+    literals: List<Literal>
+}
+
+value Proof {
+    -- Includes every unit whose full candidate coverage is used, not just
+    -- units containing a striking target. Singles/subsets need no links.
+    units: Set<UnitRef>
+    links: Set<Link>
+    paths: List<InferencePath>
+}
+
 -- One place a technique holds on a grid. licensed below says which exist;
 -- the fields are pinned there, technique by technique.
 value Deduction {
     technique: Technique
 
-    -- The unit the pattern is read in. Absent for a naked single, which is
-    -- read from one cell.
+    -- The primary unit for the first twelve techniques; absent for a naked
+    -- single and for the patterns spanning several units.
     unit: UnitRef?
 
     extent: Extent
@@ -151,6 +187,7 @@ value Deduction {
     strikes: Set<Strike>
 
     load: Integer
+    proof: Proof
 }
 
 -- A player. Every figure is a field and none is config, because config in
@@ -161,8 +198,9 @@ value Profile {
     -- The techniques the player knows.
     repertoire: Set<Technique>
 
-    -- How many things the player holds in mind at once. Cowan puts it at
-    -- three to five for an adult; it is a field so that it can be moved.
+    -- A coarse load ceiling. Cowan's conditional chunk estimates motivate
+    -- testing small capacities; they do not measure Sudoku cells or fix an
+    -- individual's capacity. The richer model counts retained facts/chunks.
     capacity: Integer
 
     -- The extents the player takes in. A set and not a ceiling, so that a
@@ -224,6 +262,11 @@ entity Technique {
 entity Grid {
     keeper: Keeper
 
+    -- An explicit premise supplied by the keeper, never inferred from the
+    -- apparent shape. False disables both uniqueness techniques. A hint
+    -- over unverified player entries cannot assert this premise.
+    uniqueness_promised: Boolean
+
     -- The digits standing in the grid when it is opened. For a set of givens
     -- that is the givens. For a puzzle in play it is every digit in it, the
     -- player's read as fixed like the setter's.
@@ -270,6 +313,10 @@ entity Grid {
     -- pattern's digits; it has at most one strike to a position, and every
     -- strike names only candidates that stand. One placement may be licensed
     -- by several techniques, and then each has its own deduction.
+    -- Advanced patterns and every proof/output are additionally constrained
+    -- by Catalogue below. witness_matches is true exactly when all those
+    -- obligations hold for this grid and this deduction, including the
+    -- first twelve techniques; a pattern elsewhere cannot license x.
     deductions: licensed(this)
 }
 
@@ -450,6 +497,11 @@ config {
     -- solver.allium restates them.
     box_side: Integer = sudoku/config.box_side
     side: Integer = sudoku/config.side
+
+    -- Finite catalogue proof limits, independent of a player's smaller
+    -- reasoning/memory limits. Changing either changes catalogue version.
+    max_chain_links: Integer = 24
+    max_forcing_paths: Integer = 9
 }
 
 ------------------------------------------------------------
@@ -459,8 +511,8 @@ config {
 -- The catalogue, in ladder order: the order the source's workflow tries
 -- things in, cheap and local before dear and global. By sight before by
 -- marks; singles, then pointing and claiming, then subsets by size with
--- naked before hidden; then fish, wings, colouring, chains, uniqueness and
--- contradiction.
+-- naked before hidden; then fish, wings, single-digit patterns, colouring,
+-- chains, bounded forcing and uniqueness.
 
 default Technique full_unit = {
     rank: 1, family: singles, reads_marks: false, load: 1, is_specified: true
@@ -510,44 +562,77 @@ default Technique hidden_quad = {
     rank: 12, family: hidden_subsets, reads_marks: true, load: 4, is_specified: true
 }
 
--- Named and ranked, and nothing licensed by them yet. A fish is the subset
--- construction on one digit's places, so its load is its size; a wing is
--- three cells. The rest depend on the deduction or are undecided.
+-- These loads are provisional baseline costs, not measurements of human
+-- working memory. A variable load is the number of distinct candidate
+-- propositions in the proof (at least one). The richer model uses explicit
+-- retained facts and its own learned chunks instead of this shortcut.
 
 default Technique x_wing = {
-    rank: 13, family: fish, reads_marks: true, load: 2, is_specified: false
+    rank: 13, family: fish, reads_marks: true, load: 2, is_specified: true
 }
 
 default Technique swordfish = {
-    rank: 14, family: fish, reads_marks: true, load: 3, is_specified: false
+    rank: 14, family: fish, reads_marks: true, load: 3, is_specified: true
 }
 
 default Technique jellyfish = {
-    rank: 15, family: fish, reads_marks: true, load: 4, is_specified: false
+    rank: 15, family: fish, reads_marks: true, load: 4, is_specified: true
 }
 
 default Technique xy_wing = {
-    rank: 16, family: wings, reads_marks: true, load: 3, is_specified: false
+    rank: 16, family: wings, reads_marks: true, load: 3, is_specified: true
 }
 
 default Technique xyz_wing = {
-    rank: 17, family: wings, reads_marks: true, load: 3, is_specified: false
+    rank: 17, family: wings, reads_marks: true, load: 3, is_specified: true
+}
+
+default Technique w_wing = {
+    rank: 18, family: wings, reads_marks: true, load: 4, is_specified: true
+}
+
+default Technique skyscraper = {
+    rank: 19, family: chains, reads_marks: true, load: 4, is_specified: true
+}
+
+default Technique two_string_kite = {
+    rank: 20, family: chains, reads_marks: true, load: 4, is_specified: true
+}
+
+default Technique empty_rectangle = {
+    rank: 21, family: chains, reads_marks: true, load: null, is_specified: true
 }
 
 default Technique simple_colouring = {
-    rank: 18, family: colouring, reads_marks: true, load: null, is_specified: false
+    rank: 22, family: colouring, reads_marks: true, load: null, is_specified: true
 }
 
-default Technique chain = {
-    rank: 19, family: chains, reads_marks: true, load: null, is_specified: false
+default Technique remote_pair = {
+    rank: 23, family: chains, reads_marks: true, load: null, is_specified: true
 }
 
-default Technique uniqueness_test = {
-    rank: 20, family: uniqueness, reads_marks: true, load: null, is_specified: false
+default Technique x_chain = {
+    rank: 24, family: chains, reads_marks: true, load: null, is_specified: true
 }
 
-default Technique nishio = {
-    rank: 21, family: contradiction, reads_marks: true, load: null, is_specified: false
+default Technique xy_chain = {
+    rank: 25, family: chains, reads_marks: true, load: null, is_specified: true
+}
+
+default Technique alternating_inference_chain = {
+    rank: 26, family: chains, reads_marks: true, load: null, is_specified: true
+}
+
+default Technique forcing_chain = {
+    rank: 27, family: contradiction, reads_marks: true, load: null, is_specified: true
+}
+
+default Technique unique_rectangle_type_1 = {
+    rank: 28, family: uniqueness, reads_marks: true, load: 4, is_specified: true
+}
+
+default Technique bug_plus_one = {
+    rank: 29, family: uniqueness, reads_marks: true, load: null, is_specified: true
 }
 
 -- Two presets, one at each end. Both are ordinary profiles, and anything
@@ -569,19 +654,20 @@ default Profile novice = {
     patience: 3
 }
 
--- Someone to whom the whole catalogue is automatic. The repertoire names
--- the unspecified techniques too, so that specifying one changes what an
--- expert finds and not what an expert is.
+-- Someone who knows the supported catalogue. The baseline capacity may
+-- still hide a long proof; knowledge and capacity remain distinct.
 default Profile expert = {
     repertoire: {
         full_unit, cross_hatch, naked_single, hidden_single,
         pointing, claiming,
         naked_pair, hidden_pair, naked_triple, hidden_triple, naked_quad, hidden_quad,
         x_wing, swordfish, jellyfish, xy_wing, xyz_wing,
-        simple_colouring, chain, uniqueness_test, nishio
+        w_wing, skyscraper, two_string_kite, empty_rectangle, simple_colouring,
+        remote_pair, x_chain, xy_chain, alternating_inference_chain,
+        forcing_chain, unique_rectangle_type_1, bug_plus_one
     },
     capacity: 4,
-    spans: { one_cell, one_box, one_line, box_and_line },
+    spans: { one_cell, one_box, one_line, box_and_line, multiple_units },
     marking: full_marks,
     order: systematic,
     fixation: unfixed,
@@ -639,7 +725,10 @@ rule LayOutGrid {
 invariant EveryDeductionIsLicensed {
     for grid in Grids:
         grid.deductions.all(x =>
-            grid.units.any(u => u.licenses(x)) or grid.cells.any(c => c.licenses(x)))
+            witness_matches(grid, x)
+                and (grid.units.any(u => u.licenses(x))
+                    or grid.cells.any(c => c.licenses(x))
+                    or x.technique.rank > hidden_quad.rank))
 }
 
 invariant OnlySpecifiedTechniquesAreLicensed {
@@ -662,14 +751,17 @@ invariant LoadIsTheTechniques {
 }
 
 -- A cell's own marks for a naked single; a box and a line for pointing and
--- claiming; otherwise the one unit the pattern is read in. A cross-hatch
+-- claiming; several units for advanced patterns; otherwise the one unit.
+-- A cross-hatch
 -- looks along the lines through its unit for the digit, and is still read in
 -- the one unit: following a line to a printed digit is not holding the line.
 invariant ExtentFollowsThePattern {
     for grid in Grids:
         grid.deductions.all(x =>
-            (x.unit = null implies x.extent = one_cell)
+            (x.technique = naked_single implies x.extent = one_cell)
                 and (x.technique.family = locked_candidates implies x.extent = box_and_line)
+                and (x.technique.rank > hidden_quad.rank implies
+                    x.unit = null and x.extent = multiple_units)
                 and (x.unit != null and x.technique.family != locked_candidates implies
                     (x.unit.kind = box implies x.extent = one_box)
                         and (x.unit.kind != box implies x.extent = one_line)))
@@ -724,6 +816,7 @@ surface Catalogue {
 
     exposes:
         grid.keeper
+        grid.uniqueness_promised
         grid.is_filled
         grid.is_kept
         grid.is_contradictory
@@ -750,38 +843,238 @@ surface Catalogue {
         -- solution is a way to fill the grid that sudoku.allium's
         -- solution_count counts. So a keeper that takes only licensed
         -- deductions from a true grid is never wrong, and one whose marks
-        -- have lost a true candidate has no such promise.
+        -- have lost a true candidate has no such promise. A uniqueness
+        -- deduction additionally requires a truthful uniqueness_promised:
+        -- the original givens have exactly one solution. The promise is a
+        -- premise, never a request to search for a solution during a proof.
 
     @guarantee ExtraCandidatesHideAndNeverMislead
         -- Every technique here is read from what the candidates rule out.
-        -- A grid that allows more than it should, because a stale candidate
-        -- was never struck, licenses fewer deductions and no false one. Only
-        -- a candidate wrongly struck, or a digit wrongly placed, can make a
-        -- licensed deduction wrong.
+        -- Extra candidates may hide patterns, but need not yield a strict
+        -- subset of another grid's catalogue: changed shapes can expose a
+        -- different valid proof. They cannot make a deduction unsound under
+        -- DeductionsAreSound's premises. This is a soundness guarantee, not
+        -- a monotonicity claim about which patterns are recognized.
 
     @guarantee SameGridSameDeductions
         -- The same digits and candidates license the same deductions, every
-        -- time. Nothing here is left to chance.
+        -- time, with the same uniqueness premise and catalogue limits.
+        -- Nothing here is left to chance.
+
+    @guarantee ProofsMatchTheirOutputs
+        -- witness_matches checks the particular supporting cells, digits,
+        -- units, links and paths of x against the unchanged input grid.
+        -- Every candidate mentioned is in 1..9 at a valid position. Every
+        -- target is open; placements have a standing candidate (or, for a
+        -- by-sight single, are allowed by placed peers). Every strike is
+        -- nonempty, removes standing candidates, and follows THIS witness.
+        -- It cannot borrow a matching pattern elsewhere on the board.
+        -- The first twelve patterns have exactly the outputs listed under
+        -- Grid.deductions. Advanced patterns strike every eligible target
+        -- for that witness. Placement proofs yield one deduction per forced
+        -- placement; strikes and placements are never combined in x.
+        -- Proof.units includes the full units used for absence/count claims.
+        -- A complete candidate set is required to assert an absence.
+        -- Reading sparse marks as a complete set is not a valid proof.
+        -- x.cells and x.digits are the core pattern, not unrelated targets.
+        -- Variable load counts its distinct candidate propositions; colour
+        -- and BUG proofs include all their supporting candidate propositions.
+        -- Duplicate witnesses from reversed paths or swapped labels have one
+        -- canonical representation. Different valid technique names remain
+        -- separate deductions, not separate credit for one applied move.
+
+    @guarantee BasicFish
+        -- X-Wing, Swordfish and Jellyfish use k=2,3,4 respectively.
+        -- Choose k distinct base rows and k distinct cover columns, or
+        -- transpose both. In each base d is unplaced and has 2..k places;
+        -- their union uses exactly those k covers. Strike d in the covers
+        -- outside the bases. No fins, boxes-as-lines or hidden exceptions.
+        -- Proof.units lists all bases and covers. With no target no deduction
+        -- exists. Reducible patterns are allowed; ladder order is separate.
+
+    @guarantee Wings
+        -- XY-Wing: distinct a,b,c; pivot {a,b}, two peer wings {a,c}
+        -- and {b,c}. Strike c from other cells seeing both wings.
+        -- XYZ-Wing changes the pivot to {a,b,c}; targets must additionally
+        -- see the pivot. Each named set is the cell's complete candidate set.
+        -- W-Wing: two nonpeer {a,b} cells P,Q; a conjugate pair U,V
+        -- for a in one unit, all four cells distinct. P sees U and Q sees V.
+        -- Strike b in other cells seeing P and Q. Swapping a and b is a
+        -- separate witness. Merely sharing a candidate is insufficient.
+
+    @guarantee SingleDigitPatterns
+        -- Skyscraper: two parallel lines each have exactly two places for d.
+        -- One endpoint from each lies on the same perpendicular line; the
+        -- other endpoints lie on different perpendicular lines. Strike d
+        -- from other cells seeing both unaligned endpoints.
+        -- Two-String Kite: a row conjugate pair and a column conjugate pair
+        -- for d, four distinct cells; one endpoint from each shares a box.
+        -- Strike d from other cells seeing both remaining endpoints.
+        -- Empty Rectangle: all d places in a box lie in row R or column C;
+        -- both arms are nonempty, their intersection lacks d, at least three
+        -- places exist. Outside the box, P=(R,K), Q=(S,K) form a column
+        -- conjugate pair for d. Strike d at (S,C) outside the box. Also
+        -- transpose this construction. The two-place variant is deferred.
+
+    @guarantee LinkMeaning
+        -- A node is a standing candidate. Distinct nodes are weakly linked
+        -- exactly when they are different digits in one cell or the same
+        -- digit in peer cells: at most one is true. A strong link requires
+        -- exactly two candidates in one open cell or exactly two places for
+        -- an unplaced digit in one unit: at least one is true. These links
+        -- are also weak; a weak link is not necessarily strong.
+        -- A weak link licenses positive(left) -> negative(right); a strong
+        -- link licenses negative(left) -> positive(right), both directions.
+        -- Each path step must be one such implication using the input grid.
+        -- No grouped nodes, links discovered by an oracle, or deductions
+        -- depending on accumulated hypothetical changes are admitted.
+
+    @guarantee SimpleColouring
+        -- For one digit, two-colour a connected component of conjugate
+        -- links; each link joins opposite labels. A same-label peer pair
+        -- makes that label false: strike d at all its nodes (colour wrap).
+        -- An outside node seeing both labels loses d (colour trap).
+        -- Disconnected components cannot share a label assignment as proof.
+        -- Labels are logical values, not a requirement to display colour.
+
+    @guarantee RemotePairs
+        -- At least four distinct cells each have exactly {a,b}. Consecutive
+        -- cells are peers, so their assignments alternate. Two cells an odd
+        -- number of links apart have opposite assignments. Strike both a
+        -- and b, where present, from outside cells seeing such a pair.
+        -- At most config.max_chain_links peer links; no repeating cells.
+
+    @guarantee AlternatingChains
+        -- For endpoint strikes, candidate nodes alternate strong and weak links,
+        -- starting and ending strong, with at most config.max_chain_links.
+        -- It proves that at least one endpoint is true. Strike any candidate
+        -- weakly linked to BOTH endpoints, excluding the endpoints.
+        -- X-Chain restricts all nodes to one digit, with at least three links.
+        -- XY-Chain uses only bivalue cells: strong links within cells,
+        -- weak links between peers on a common digit, equal endpoint digits,
+        -- at least three distinct cells.
+        -- Alternating Inference Chain permits both sorts of single-node
+        -- strong link and different endpoint digits. This includes the
+        -- usual same-digit and different-digit endpoint strikes.
+        -- Also permit a path from a literal to its negation: strike its
+        -- candidate if the start is positive, place it if negative.
+        -- These closure paths obey LinkMeaning: a positive start uses a
+        -- weak first link, a negative start a strong one. The same path
+        -- length bound applies; the endpoint-strike shape is not required.
+        -- Such discontinuous closure is an AIC deduction, not a solution
+        -- search. Continuous loops may expose subpaths with these outputs;
+        -- no separate loop name or further inference rule is introduced.
+
+    @guarantee BoundedForcingChains
+        -- forcing_chain admits up to config.max_forcing_paths static-link
+        -- paths, each of at most config.max_chain_links. No nested guesses
+        -- and no path step that needs results of earlier nonadjacent steps.
+        -- Contradiction: from one literal, paths reach incompatible literals
+        -- (p and not-p; two positive digits in one cell; positive equal
+        -- digits in peer cells;
+        -- all candidates of a cell false; or every place for a unit's
+        -- unplaced digit false). Negate the starting literal.
+        -- Verity: roots exhaust both truth values of one candidate, all
+        -- candidates of one cell, or every place of an unplaced unit digit.
+        -- Every root must reach the same literal; assert that literal.
+        -- A positive conclusion places, a negative conclusion strikes.
+        -- An unfinished path or exhausted bound proves nothing. Logical
+        -- case analysis is temporary, with no speculative board entry;
+        -- writing a guess and playing its branch is a model action instead.
+
+    @guarantee UniquenessPatterns
+        -- Both require uniqueness_promised and sound standing information.
+        -- Unique Rectangle Type 1: four open cells occupy two rows, two
+        -- columns and exactly two boxes. Three have exactly {a,b}; the
+        -- fourth has both plus extras. Strike a,b from the fourth.
+        -- No given is a corner; missing-candidate variants are excluded.
+        -- BUG+1: every open cell is bivalue except one trivalue cell T.
+        -- Removing candidate d from T must leave exactly two places for
+        -- every unplaced digit in EVERY unit and two candidates in EVERY
+        -- open cell. Place d in T. Checking T's units alone is insufficient.
+        -- The proof includes the global check, not merely the shape of T.
+
+    @guarantee ElementaryExamples
+        -- These are acceptance fixture schemas. Complete unspecified cells
+        -- consistently with the stated premises and at least one solution;
+        -- confirm all solutions are preserved, not just a reference answer.
+        -- Full unit: r1 has eight distinct placed digits except 9; its one
+        -- open cell becomes 9. Two open cells reject that witness.
+        -- Cross-hatch: for unplaced 7 in box1, placed peers exclude every
+        -- open cell except r2c2; place 7 there. A second unexcluded cell
+        -- rejects it even if r2c2 happens to be the solution.
+        -- Naked single: r1c1={4} places 4; {4,8} rejects.
+        -- Hidden single: only r1c1 allows 4 in row1, with {4,8}; place 4.
+        -- Add 4 at another open row1 cell and that witness is rejected.
+        -- Pointing: box1 has 7 only at r1c1,r1c2; strike it from r1c4.
+        -- Add 7 at r2c3 and reject that row-pointing witness.
+        -- Claiming: row1 has 7 only at r1c1,r1c2; strike it from r2c3.
+        -- Add 7 at r1c4 and reject that claiming witness.
+        -- Naked pair: {1,2},{1,2}; triple: {1,2},{2,3},{1,3};
+        -- quad: {1,2},{2,3},{3,4},{1,4}, each in one unit.
+        -- Strike their union from another cell. Add a new digit outside
+        -- that union to a member and reject that specified k-cell witness.
+        -- Hidden pair/triple/quad: respectively 2/3/4 digits have all their
+        -- places in exactly that many cells, each digit appearing at least
+        -- once; those cells also have 9. Strike 9 there. Add a place for a
+        -- chosen digit outside those cells and reject that hidden witness.
+
+    @guarantee AdvancedExamples
+        -- As above, these schemas constrain exact witnesses, not an assertion
+        -- that no OTHER technique holds after a negative mutation.
+        -- X-Wing: d at c2,c7 only in base rows1,4; strike r8c2=d.
+        -- Swordfish: rows1,4,7 have d respectively at c2c5,c5c8,c2c8;
+        -- strike r9c5=d. Jellyfish: rows1,3,5,7 have d at c1c3,c3c5,
+        -- c5c7,c1c7; strike r9c1=d. For each, add a candidate in a
+        -- base outside its covers; that exact fish is no longer licensed.
+        -- XY-Wing: r1c1={1,2}, r1c4={1,3}, r4c1={2,3};
+        -- strike 3 at r4c4. Add 3 to pivot and the XY witness fails.
+        -- XYZ-Wing: r1c1={1,2,3}, r1c2={1,3}, r2c1={2,3};
+        -- strike 3 at r2c2. With wings instead at r1c4={1,3} and
+        -- r2c2={2,3}, r2c4 sees both wings but not the pivot: no strike.
+        -- W-Wing: P=r1c1,Q=r4c4 both {1,2}, conjugate
+        -- 1 at r1c7,r4c7; strike 2 at r1c4. A third 1 in c7 rejects.
+        -- Skyscraper: d only c1c5 in r1, c1c6 in r4; strike r2c6=d.
+        -- A third base-line place rejects. Two-String Kite: d only r1c1,
+        -- r1c5 in r1 and r2c2,r5c2 in c2; strike r5c5=d. Move the
+        -- joined endpoints so they do not share a box: reject the witness.
+        -- Empty Rectangle: d in box5 only r4c5,r4c6,r5c4; conjugate d
+        -- at r4c1,r8c1 in c1; strike r8c4=d. Add r6c6=d: reject.
+        -- Simple colouring: a connected conjugate path colours A and C
+        -- alike; if A,C are peers that colour is struck. An outside target
+        -- seeing opposite labels loses d; seeing only one label rejects.
+        -- Remote Pair: {1,2} at r1c1,r1c4,r4c4,r4c2; strike 1,2 at
+        -- r2c2. Add 3 to a chain cell and reject that chain.
+        -- X-Chain: A=B-C=D for one digit, each '=' a conjugate link;
+        -- target seeing A,D loses it. A weak first link rejects.
+        -- XY-Chain: {1,2},{2,3},{3,4},{4,1} along consecutive peer
+        -- cells; target seeing endpoints loses 1. A trivalue member rejects.
+        -- AIC: A=B-C=D with mixed digits; any candidate weakly linked
+        -- to A,D is struck. A candidate linked only to A is not struck.
+        -- Forcing chain: complete paths for p and not-p both reach q;
+        -- assert q. Omitting either path or exceeding the bound rejects.
+        -- Unique Rectangle Type 1: r1c1,r1c2,r4c1={1,2},
+        -- r4c2={1,2,3}; strike 1,2 at r4c2. Four boxes or no uniqueness
+        -- premise rejects. BUG+1: removing 3 from the only {1,2,3}
+        -- cell leaves the global BUG counts; place 3. Another trivalue
+        -- cell, a failed count anywhere or no uniqueness premise rejects.
+
+    @guarantee CatalogueValidation
+        -- An implementation must instantiate every positive and near-miss
+        -- schema above on full 81-cell candidate states, and check targets,
+        -- proof premises, digit/row/column symmetry and solution preservation.
+        -- Uniqueness fixtures require a verified unique original puzzle.
+        -- An exact evaluator may validate fixtures; it may not supply the
+        -- witness that a simulated player supposedly found.
 }
 
 ------------------------------------------------------------
--- Open Questions
+-- Catalogue boundary
 ------------------------------------------------------------
 
-open question "A cell whose placed peers hold every digit but one can be placed by counting, with no marks. Is that a technique of its own beside naked_single, and is its load one or the eight digits counted?"
-
-open question "Partial marking, such as writing a digit only where it has two places in a box: is it a third Marking, and which techniques can read it?"
-
-open question "Should a naked subset be refused when one of its cells has a single candidate, or a hidden one when a smaller subset lies inside it? Both are sound as stated; a systematic player takes the smaller pattern first anyway."
-
-open question "Fish (x_wing, swordfish, jellyfish): base and cover lines, what is struck, and whether finned and sashimi fish are techniques of their own."
-
-open question "Wings (xy_wing, xyz_wing): pivot and wings, what is struck, and whether w_wing belongs beside them."
-
-open question "simple_colouring: how a colouring is built from conjugate pairs, its two strikes, and how its load grows with the cells coloured."
-
-open question "chain: whether x-chains, xy-chains, AICs and forcing chains are one technique or several, and load as a function of length."
-
-open question "uniqueness_test: it assumes the puzzle is well-posed, which sudoku.allium guarantees of every puzzle set. Which patterns, and may a rating lean on them?"
-
-open question "nishio: solver.allium calls a trial a guess. Is a bounded contradiction test a technique on this ladder, or a guess and so lapse.allium's?"
+-- Reducible subsets remain valid. Reconstructing a complete cell candidate
+-- set by inspecting peers is the human model's work; its final singleton is
+-- naked_single, with no new technique name or free eight-digit chunk.
+-- Partial notes, general reasoning and speculative guesses are model
+-- behaviour, not new catalogue entries. Deferred families are listed in
+-- Excludes; expanding them requires new proof obligations and fixtures.

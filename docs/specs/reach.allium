@@ -201,7 +201,9 @@ rule OpenGrid {
     when: run: Run.created
 
     -- technique.allium lays the grid out when it is created.
-    ensures: technique/Grid.created(keeper: run, start: run.start)
+    ensures: technique/Grid.created(
+        keeper: run, start: run.start, uniqueness_promised: run.purpose = rating
+    )
 }
 
 -- Upkeep ----------------------------------------------------
@@ -375,11 +377,13 @@ surface Hinting {
             when puzzle.status = unsolved and puzzle.is_consistent
 
     @guarantee AHintIsWhatThisPlayerWouldFind
-        -- The step a hint run records is the one a rating run of the same
-        -- profile would take first from the same digits: a technique the
-        -- player knows, of a size they can hold, where they would look. A
-        -- hint is never drawn from above the profile, and a stalled hint run
-        -- says there is nothing at this level.
+        -- The step a hint run records is the first this profile would take
+        -- from the same digits and premises: a technique the player knows,
+        -- of a size they can hold, where they would look. Unverified player
+        -- entries carry no uniqueness promise, so a hint cannot use the two
+        -- uniqueness techniques that a rating run may use. A hint is never
+        -- drawn from above the profile, and a stalled hint run says there
+        -- is nothing at this level under the available premises.
 
     @guarantee AHintChangesNothing
         -- A hint run reads the puzzle and never places in it. Its grid is

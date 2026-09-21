@@ -165,7 +165,7 @@ rule BeginRun {
 rule OpenGrid {
     when: run: Run.created
 
-    ensures: technique/Grid.created(keeper: run, start: run.start)
+    ensures: technique/Grid.created(keeper: run, start: run.start, uniqueness_promised: true)
 }
 
 rule Look {

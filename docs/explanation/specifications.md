@@ -30,7 +30,7 @@ named guarantee, it is testable.
 
 ## What the modules are
 
-Seven are the game's today. The root module under `docs/specs/`, named after this game,
+Eight are the game's today. The root module under `docs/specs/`, named after this game,
 which [the documentation map](../README.md) names, states the six figures the
 platform states, so `tests/platformSpecs.test.ts` can hold the two equal, and one
 surface with one guarantee, so the specification is checked rather than merely
@@ -42,18 +42,24 @@ set of givens its verdict — no solution, one or many — and the work that sea
 seen to do, and nothing about how it is stored or made fast. It imports the rules and is
 not imported by them.
 
-Four more say how a person solves a puzzle, which `solver.allium` excludes.
+Five more say how a person solves a puzzle, which `solver.allium` excludes.
 `technique.allium` states the named techniques once — when each holds on a grid of digits
 and candidates and what it places or strikes — and the profile of a player: what they
 know, how much they hold in mind, how much of the grid they take in, and whether they
-keep marks. Three models of that player stand on it and never import each other, because
+keep marks. Three baseline models stand on it and never import each other, because
 each is a different answer to what a limit does. In `reach.allium` a limit hides a
 deduction, so a puzzle is within a player's reach or it is not, and the next thing that
 player would find is a hint pitched at them. In `effort.allium` a limit makes a deduction
 dear, and a puzzle is priced end to end. In `lapse.allium` a limit lets marks fall
 behind until the player guesses, and a guess is the one thing that can be wrong.
-`technique.allium` and `reach.allium` are specified in full through subsets; the other two
-are coarse and say so in their `Scope`. The platform's own three,
+`technique.allium` now defines 29 techniques, including bounded chains and explicit
+uniqueness premises. `effort.allium` and `lapse.allium` remain coarse and retain their
+open questions. `human-solving.allium` shares the logical catalogue while specifying
+its own independently tunable cognition, experience, aids, fallible microsteps and
+seeded repeated assessments. Its [owning explanation](human-solving.md) states the
+research basis and provisional parameter choices. These are behavioural contracts
+for a future simulator; passing the Allium gates is not an empirical validation.
+The platform's own three,
 `appearance.allium`, `operation.allium` and `play-surfaces.allium`, ship inside
 `@steven-cutting/biscuit-games` and are not imported: Allium has no cross-repository
 import, so a clause this game restates is held to the platform's text by test instead.
@@ -79,4 +85,5 @@ no scheme for satisfying it. How is this repository's business; `AGENTS.md` deci
 
 - [Work with the specifications](../how-to/work-with-the-specs.md)
 - [Accessibility](accessibility.md)
+- [Modelling a human Sudoku solver](human-solving.md)
 - [Decision 0003](../decisions/0003-specs-are-the-source-of-truth.md)

@@ -16,7 +16,7 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 The game adds a row for every term its specification names. The Sudoku terms are
 `sudoku.allium`'s, which picks one word where the game's literature has several, the
 solving terms are `solver.allium`'s, and the terms of a person solving are
-`technique.allium`'s and its three models'.
+`technique.allium`'s, its three baseline models' and `human-solving.allium`'s.
 
 | Term | Meaning |
 | --- | --- |
@@ -50,14 +50,24 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Subset | A pair, a triple or a quad, naked or hidden. |
 | Cross-hatch | A hidden single read from the placed digits alone, with no marks, in a box or a line. |
 | Pointing, claiming | A box whose places for a digit lie on one line, and a line whose places lie in one box. Never box-line reduction. |
-| Profile | A player as a set of figures: repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience. Novice and expert are presets. |
-| Load, capacity | How many things a deduction has held in mind at once, and how many a player can. |
+| Profile | A parameterized player. The baseline `technique/Profile` has repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience. The richer `human-solving/PlayerProfile` separates ability, experience, biases and coping. |
+| Load, capacity | Baseline load is a coarse per-proof figure. In the richer model capacity bounds simultaneously retained chunks, including pending reasoning and unwritten branch data. Neither is a count of Sudoku cells or an intelligence score. |
 | Extent, span | How much of the grid a deduction is read across, and an extent a player takes in. |
 | Run | One player model put to one set of digits. It looks, steps and looks again. Each model has its own. |
 | Step | A deduction taken; in `lapse.allium` also a check, a guess or a repair. |
 | See, stall | In `reach.allium`: a deduction the profile does not hide is seen, and a run that sees nothing in an unfilled grid stalls. |
 | Price, escalation | In `effort.allium`: what a step costs this player, and a step taken from beyond their profile. |
 | Check, repair | In `lapse.allium`: bringing every mark up to date, and returning the grid to how it stood before a wrong guess. |
+| Attempt | In `human-solving.allium`: one fresh puzzle, resolved profile, environment, budgets, versions and seed, carried through to a stopping reason and independent judgement. |
+| Microstep | One paid action such as attending, inspecting a fact, rehearsing, inferring, writing a note or committing a digit. An unsuccessful action is still recorded. |
+| Fact, belief | One proposition acquired or derived by the simulated person. It has provenance and confidence and can be false; a coverage assertion does not contain all the facts it summarizes. |
+| Chunk | A bounded group of learned, recognized facts occupying one working-memory slot. Arbitrary bundles do not qualify. |
+| Sheet | Actual entries, external candidate notes and deliberately written branch records, separate from mental beliefs and observer knowledge. |
+| Coverage | An assertion that all alternatives of one cell, or all positions for one digit in a unit, were checked. Missing partial notes do not establish coverage. |
+| Observer | The independent evaluator that can inspect full traces and solution truth; its judgements do not steer the simulated person. |
+| Assessment | Results from a declared seed list under one fixed condition, retaining counts, distributions and every attempt rather than a universal scalar difficulty. |
+| Familiar recognition, elementary derivation | A learned pattern shortcut, and explicit reasoning from acquired Sudoku premises. Deriving an unfamiliar pattern does not make it familiar. |
+| Fatigue, frustration | Bounded transient states altered by spent effort, fruitless search, perceived progress and rest; independent of fixed experience. |
 
 ## The repository
 
@@ -76,4 +86,5 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 ## Related pages
 
 - [Specifications](../explanation/specifications.md)
+- [Modelling a human Sudoku solver](../explanation/human-solving.md)
 - [Repository map](repository-map.md)
