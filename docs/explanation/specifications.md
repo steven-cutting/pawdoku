@@ -59,8 +59,9 @@ description of a player to `technique.allium`'s profile, so that one player can 
 through all four and the results compared.
 `technique.allium` defines 29 techniques, including bounded chains and explicit
 uniqueness premises, and records how each question it once left open was resolved.
-`effort.allium` and `lapse.allium` remain coarse and retain their open questions, which
-name the answer `human-solving.allium` gives where it gives one. Its [owning explanation](human-solving.md) states the
+`lapse.allium` records the same of its own seven, each answer deliberately simpler than
+`human-solving.allium`'s. `effort.allium` remains coarse and retains its open questions,
+which name the answer `human-solving.allium` gives where it gives one. Its [owning explanation](human-solving.md) states the
 research basis and provisional parameter choices. These are behavioural contracts
 for a future simulator; passing the Allium gates is not an empirical validation.
 The platform's own three,

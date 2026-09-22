@@ -46,10 +46,12 @@ question. The projection loses what the coarse profile cannot say, most visibly
 elementary reasoning: a rules-only novice projects to an empty repertoire and stalls
 in reach at once, while the same player here can still derive a single.
 
-Several open questions in `effort.allium` and `lapse.allium` — search effort, the
-cost of upkeep, slips, imperfect repair, an unnoticed contradiction — are answered
-here for a seeded attempt, and those questions now say so. They stay open for the
-deterministic models, which are not layers under this one. Extending the shared
+Several open questions in `effort.allium` — search effort, the cost of upkeep, what
+fatigue does — are answered here for a seeded attempt, and those questions now say so.
+They stay open for that model, which is not a layer under this one. `lapse.allium` has
+answered its own, and differs on purpose: it has no slips, its repair is perfect, and a
+contradiction is noticed whole when the player is next stuck, where here each change is
+recalled at a cost and a conflict must be observed. Extending the shared
 catalogue changes all four models' results. Rating runs supply an explicit
 uniqueness premise; unverified hint grids do not.
 

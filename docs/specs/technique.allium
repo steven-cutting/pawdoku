@@ -237,7 +237,9 @@ value Profile {
     fatigue: Integer
 
     -- How many looks in a row may find nothing before the player guesses.
-    -- lapse.allium's. reach.allium and effort.allium never guess.
+    -- lapse.allium's, which checks lapsed marks while patience is left and
+    -- guesses sooner where none has lapsed, so that there it is a switch:
+    -- none or some. reach.allium and effort.allium never guess.
     patience: Integer
 
     knows(x): x.technique in repertoire

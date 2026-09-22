@@ -63,7 +63,7 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Step | A deduction taken; in `lapse.allium` also a check, a guess or a repair. |
 | See, stall | In `reach.allium`: a deduction the profile does not hide is seen, and a run that sees nothing in an unfilled grid stalls. |
 | Price, escalation | In `effort.allium`: what a step costs this player, and a step taken from beyond their profile. |
-| Check, repair | In `lapse.allium`: bringing every mark up to date, and returning the grid to how it stood before a wrong guess. |
+| Check, repair | In `lapse.allium`: bringing every mark up to date, taken only while some mark is stale, and returning the grid to how it stood before a wrong guess. |
 | Attempt | In `human-solving.allium`: one fresh puzzle, resolved profile, environment, budgets, versions and seed, carried through to a stopping reason and independent judgement. |
 | Microstep | One paid action such as attending, inspecting a fact, rehearsing, inferring, writing a note or committing a digit. An unsuccessful action is still recorded. |
 | Fact, belief | One proposition acquired or derived by the simulated person. It has provenance and confidence and can be false; a coverage assertion does not contain all the facts it summarizes. |
