@@ -14,7 +14,13 @@ reachable from here. That is the whole of the arrangement; the rules behind it a
 
 Behaviour is specified separately, in Allium, under `docs/specs/`, rooted at
 [`pawdoku.allium`](specs/pawdoku.allium), with the rules of Sudoku themselves in
-[`sudoku.allium`](specs/sudoku.allium). Three more modules are the
+[`sudoku.allium`](specs/sudoku.allium) and what decides whether givens are well-posed in
+[`solver.allium`](specs/solver.allium). How a person solves one is
+[`technique.allium`](specs/technique.allium)'s, with four models of a player built on it:
+[`reach.allium`](specs/reach.allium), [`effort.allium`](specs/effort.allium),
+[`lapse.allium`](specs/lapse.allium) and
+[`human-solving.allium`](specs/human-solving.allium), the one with chance in it: bounded
+cognition, fallible attempts and repeated assessment. Three more modules are the
 platform's, arrive inside `@steven-cutting/biscuit-games`, and are compared against this
 game's restatements rather than edited here; see
 [The platform upstream](project/platform.md). Those files are not part of this handbook;
@@ -74,3 +80,8 @@ understand how the two relate.
 
 Pages this game adds are listed here, after everything the template manages, so an
 update from the template and an addition here land in different places.
+
+- [Strategies for solving Sudoku](explanation/solving-sudoku.md) — how people, mathematics and
+  programs solve one, and the background to [`solver.allium`](specs/solver.allium).
+- [Modelling a human Sudoku solver](explanation/human-solving.md) — cognitive limits,
+  experience, mistakes, parameter presets and profile-relative assessment.

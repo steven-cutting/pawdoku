@@ -14,7 +14,9 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 ## The game
 
 The game adds a row for every term its specification names. The Sudoku terms are
-`sudoku.allium`'s, which picks one word where the game's literature has several.
+`sudoku.allium`'s, which picks one word where the game's literature has several, the
+solving terms are `solver.allium`'s, and the terms of a person solving are
+`technique.allium`'s and its four models'.
 
 | Term | Meaning |
 | --- | --- |
@@ -31,6 +33,48 @@ The game adds a row for every term its specification names. The Sudoku terms are
 | Well-posed | Having exactly one solution. Every puzzle a setter may pose is. Never proper. |
 | Conflict | Two peers holding the same digit. The rules permit it and both cells are in it. |
 | Solved | Every cell holds a digit and none conflicts. Final: a solved puzzle takes no more moves. |
+| Candidate | A digit a cell may still hold while givens are being solved. `solver.allium`'s, as are the seven terms below. |
+| Search | The solving of one set of givens, from the moment they are handed over to its verdict. |
+| Branch | One grid of candidates within a search. One works at a time, and a guess splits it into a child for each candidate of one cell. |
+| Propagate | To strike a placed digit from its peers' candidates and place the singles that leaves, until nothing more follows. |
+| Guess | A digit tried in a cell when propagation has run out, and the branch opened to try it. Never trial or assumption. |
+| Contradiction | A branch that can hold no solution: a cell with no candidate, a unit with no place for a digit, or a cell that is the only place for two digits. |
+| Verdict | What a search concludes of its givens: none, one or many solutions. One is well-posed. |
+| Solution | A full grid with no conflict that holds every given. What a solved branch holds. |
+| Technique | A named way a person deduces something from a grid: a full unit, a cross-hatch, a naked or hidden single, pointing, claiming, a naked or hidden subset, and the rest of `technique.allium`'s catalogue. |
+| Ladder | The order techniques are tried in, cheap and local before dear and global. A technique's rank is its place on it. |
+| Deduction | One place a technique holds on a grid: where, with which digits, and what it places or strikes. |
+| Placement | A digit a deduction, or a guess, puts in a cell. |
+| Strike | Candidates a deduction removes from a cell. Never eliminate. |
+| Mark | A candidate as the player has it written. Stale when a placed peer rules it out; lapsed marks are marks left stale. |
+| Subset | A pair, a triple or a quad, naked or hidden. |
+| Cross-hatch | A hidden single read from the placed digits alone, with no marks, in a box or a line. |
+| Pointing, claiming | A box whose places for a digit lie on one line, and a line whose places lie in one box. Never box-line reduction. |
+| Bivalue, conjugate pair | An open cell with two candidates, and a digit's only two places in a unit. |
+| Link, literal, path | Two candidates joined weakly (at most one is true) or strongly (at least one is); a candidate asserted or denied; literals each following from the last by one link. |
+| Base, cover | The two sets of lines a fish is read across: the digit's places in the bases lie in the covers, and it is struck from the rest of the covers. |
+| Proof, witness | The units, links and paths a deduction rests on, and one particular place a technique holds, with its proof, as against the technique holding somewhere. |
+| Uniqueness promise | The premise that the givens have one solution, stated by whoever keeps a grid and never inferred. A rating makes it; a hint over a player's unverified entries does not. |
+| Profile | A parameterized player. `technique/Profile` has repertoire, capacity, spans, marking, order, fixation, upkeep, budget, fatigue and patience, and `reach`, `effort` and `lapse` read it. `human-solving/PlayerProfile` separates ability, experience, biases and coping. |
+| Projection | `human-solving.allium`'s statement of the `technique/Profile` a `PlayerProfile` in an environment amounts to, so that one player can be put through all four models. |
+| Load, capacity | In `technique.allium` load is a coarse per-proof figure and capacity its ceiling. In `human-solving.allium` capacity bounds simultaneously retained chunks, including pending reasoning and unwritten branch data. Neither is a count of Sudoku cells or an intelligence score. |
+| Extent, span | How much of the grid a deduction is read across, and an extent a player takes in. |
+| Run | One player model put to one set of digits. It looks, steps and looks again. Each model has its own; `human-solving.allium` calls its run an attempt and its step a microstep. `Rate`, `Price`, `Tackle` and `Simulate` ask for one of each. |
+| Step | A deduction taken; in `lapse.allium` also a check, a guess or a repair. |
+| See, stall | In `reach.allium`: a deduction the profile does not hide is seen, and a run that sees nothing in an unfilled grid stalls. |
+| Price, escalation | In `effort.allium`: what a step costs this player, and a step taken from beyond their profile. |
+| Check, repair | In `lapse.allium`: bringing every mark up to date, taken only while some mark is stale, and returning the grid to how it stood before a wrong guess. |
+| Attempt | In `human-solving.allium`: one fresh puzzle, resolved profile, environment, budgets, versions and seed, carried through to a stopping reason and independent judgement. |
+| Microstep | One paid action such as attending, inspecting a fact, rehearsing, inferring, writing a note or committing a digit. An unsuccessful action is still recorded. |
+| Fact, belief | One proposition acquired or derived by the simulated person. It has provenance and confidence and can be false; a coverage assertion does not contain all the facts it summarizes. |
+| Chunk | A bounded group of learned, recognized facts occupying one working-memory slot. Arbitrary bundles do not qualify. |
+| Note, entry | In `human-solving.allium`: one cell's written marks together with a claim of coverage, and a digit standing on the sheet, given or written by the player. A mark is still one written candidate. |
+| Sheet | Actual entries, external candidate notes and deliberately written branch records, separate from mental beliefs and observer knowledge. |
+| Coverage | An assertion that all alternatives of one cell, or all positions for one digit in a unit, were checked. Missing partial notes do not establish coverage. |
+| Observer | The independent evaluator that can inspect full traces and solution truth; its judgements do not steer the simulated person. |
+| Assessment | Results from a declared seed list under one fixed condition, retaining counts, distributions and every attempt rather than a universal scalar difficulty. |
+| Familiar recognition, elementary derivation | A learned pattern shortcut, and explicit reasoning from acquired Sudoku premises. Deriving an unfamiliar pattern does not make it familiar. |
+| Fatigue, frustration | Bounded transient states altered by spent effort, fruitless search, perceived progress and rest; independent of fixed experience. `technique/Profile`'s fatigue and patience are coarser figures under the same words: the effort that takes one from capacity, and the fruitless looks before a guess. |
 
 ## The repository
 
@@ -49,4 +93,5 @@ The game adds a row for every term its specification names. The Sudoku terms are
 ## Related pages
 
 - [Specifications](../explanation/specifications.md)
+- [Modelling a human Sudoku solver](../explanation/human-solving.md)
 - [Repository map](repository-map.md)
