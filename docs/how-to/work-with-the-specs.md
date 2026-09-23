@@ -18,6 +18,7 @@ after its slug, and the modules the game adds beside it. This page is the proced
 | --- | --- |
 | `<slug>.allium`, the root module | The six figures the platform also states, and the `Play` surface with its one guarantee. A module that needs a figure or the `Play` surface imports this one. |
 | `sudoku.allium` | The rules of classic Sudoku and nothing about how they look: the grid, its units and peers, what a setter may pose, the two moves a player has, conflicts, and when a puzzle is solved. It imports nothing; a module that draws the rules imports it and the root. |
+| `board.allium` | The puzzle in play: one board a puzzle, a note in every cell with upkeep, the four moves with exact undo and redo, the board as it stood after any move, the check of one cell against the solution, and the record a board is written to and reopened from. It imports `sudoku.allium` alone and puts every placement and erasure to the rules' own moves. |
 | `solver.allium` | What decides whether a set of givens is well-posed: the search, its branches and candidates, propagation by singles, contradiction, the guess on a cell with the fewest candidates, and the verdict of none, one or many with the solutions found. It imports `sudoku.allium`, which does not import it, and says nothing of how a solver is stored or made fast. |
 | `technique.allium` | The shared catalogue of 29 named techniques, proof obligations and acceptance schemas; the grid and coarse profile that `reach`, `effort` and `lapse` read; and the record of how its earlier open questions were resolved. It imports `sudoku.allium` alone. |
 | `reach.allium` | The player model in which a limit hides a deduction: what a profile sees, which deduction it takes next, how far it gets through a set of givens, and the hint it would be given in a puzzle in play. It imports `sudoku.allium` and `technique.allium` and none of the other three models. |
@@ -118,11 +119,15 @@ state the adjacency in the guarantees of the surfaces concerned — and no waive
 
 `allium.field.unused` counts uses within one module only, so a definition whose only
 readers sit in another module is reported, although the language has always allowed a
-module to read another's fields. A waiver for it is legitimate on these terms, but read the
-definition twice before writing one: the diagnostic can be wrong about the language and
-still right that the declaring module has something true to say about the field, such as
-the property its readers exist to maintain. Waive only what the reference plainly permits,
-and only when there is nothing truthful to say instead.
+module to read another's fields. It also does not count a use inside a projection's
+`where` predicate, so a derived value read only as `moves where is_next_to_redo` is
+reported as unused; `board.allium` answers that with an invariant that states a true
+property of the value, which is the better route than a waiver. A waiver for it is
+legitimate on these terms, but read the definition twice before writing one: the
+diagnostic can be wrong about the language and still right that the declaring module has
+something true to say about the field, such as the property its readers exist to
+maintain. Waive only what the reference plainly permits, and only when there is nothing
+truthful to say instead.
 
 Two more gaps are handled without a waiver at all. The checker sees a `.created(...)` call
 only when it stands alone as an ensures statement, at 3.6.1 exactly as at 3.5.3: bind the

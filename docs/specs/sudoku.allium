@@ -31,7 +31,8 @@
 --     one. solution_count below is a black box for that reason; what decides
 --     it is solver.allium's, which imports this module and is not imported.
 --   - Notes, hints, undo, timers, counts of mistakes and whatever is remembered
---     between visits. None is a rule of Sudoku.
+--     between visits. None is a rule of Sudoku. board.allium keeps the notes,
+--     the moves, undo and the check for a puzzle in play.
 --   - Whether a surface refuses, flags or merely allows a conflicting
 --     placement. The rules allow it; pawdoku.allium's Play surface and the
 --     modules beneath it decide what a player is shown.
