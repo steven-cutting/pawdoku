@@ -80,7 +80,10 @@ This separation matters even for simple moves. A written 4 in an otherwise
 unmarked cell is a partial note. It does not establish that 4 is the only candidate.
 A person might mistakenly treat it that way; the model records the faulty inference,
 its consequences and any later detection. If 4 happens to be right, that does not
-turn the reasoning into a valid naked single.
+turn the reasoning into a valid naked single. A coverage flag is the certification:
+it can be written only when the cell's marks are exactly the candidates the person
+has checked, so a flagged cell with a missing mark means an earlier error or a later
+change on the board, never an ordinary note left half-written.
 
 ## Research and the claims it supports
 

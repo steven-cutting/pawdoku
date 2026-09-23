@@ -862,9 +862,15 @@ surface Simulation {
         -- one cell-digit mark, coverage flag, or branch checkpoint fragment.
         -- The intended edit uses a retained fact, then entry_error may
         -- substitute one other legal edit. Given entries cannot be edited.
-        -- Writing a coverage flag needs a retained checked coverage fact;
-        -- writing a mark needs a possible fact or a coverage fact that
-        -- still holds that digit, checked or not, so notes may be partial.
+        -- Writing a mark needs a possible fact or a coverage fact that
+        -- still holds that digit, checked or not, so marks may be partial;
+        -- erasing a mark needs an excluded fact or a checked coverage fact
+        -- that no longer holds that digit. Writing a coverage flag needs a
+        -- retained checked coverage fact for that cell whose remaining set
+        -- is exactly the marks the cell already shows. The flag certifies
+        -- the marks as complete, so an incomplete cell cannot be flagged,
+        -- and a false flag arises only through an error already in the
+        -- facts it and its marks were written from, or a later board change.
         -- Reading a coverage flag yields a coverage fact with checked true,
         -- remaining full and no mark yet folded. A present mark read yields
         -- a possible fact; an absent mark read yields an excluded fact from
@@ -1226,7 +1232,11 @@ surface Acceptance {
 
     @guarantee PartialNotesAndHiddenInformation
         -- A cell with only a written 4 but no coverage claim cannot produce
-        -- a sound naked single. Reading another cell must not reveal its
+        -- a sound naked single. With a retained checked set {2,5}, writing
+        -- the 2 alone, the flag cannot be written; once both marks stand
+        -- the flag is written, and a later reread folds every mark back to
+        -- {2,5}. No error-free sequence of note edits yields a single from
+        -- the 2 alone. Reading another cell must not reveal its
         -- candidates. Observer knowledge of an available X-Wing must not
         -- influence choice before its relevant facts are acquired.
         -- Manual notes can stay stale after a placement; automatic notes

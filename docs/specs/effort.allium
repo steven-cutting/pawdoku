@@ -177,10 +177,13 @@ rule Look {
     requires: run.is_poised
 
     -- Read before anything changes, so that the step about to be recorded
-    -- does not enter its own price. chosen of nothing is nothing and has no
-    -- price, and then no step is recorded and neither is read.
+    -- does not enter its own price. chosen of nothing is nothing, and a
+    -- binding is read whether or not the branch below uses it, so the
+    -- price is guarded: pricing nothing would read the technique of
+    -- nothing, which is an error. Then no step is recorded and no price
+    -- is read.
     let taken = chosen(filter(run.grid.deductions, x => run.is_cheapest(x)))
-    let cost = run.price(taken)
+    let cost = if taken != null: run.price(taken) else: null
     let next_index = run.steps.count + 1
 
     -- One rule and three ends. A full grid is solved. A grid that licenses
@@ -263,6 +266,8 @@ surface Pricing {
         -- A run never stops because the profile gave out. It stops solved,
         -- or unpriced where the catalogue itself licenses nothing, so two
         -- profiles put to one puzzle are compared over the whole of it.
+        -- Either end records no step and leaves the total as it stood:
+        -- nothing is priced when nothing is taken.
 
     @guarantee EscalationIsTheLastResort
         -- No step is taken from beyond the profile while anything within it
