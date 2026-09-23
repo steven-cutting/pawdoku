@@ -52,7 +52,8 @@
 --     takes or where one is kept.
 --   - Two boundaries: Playing, which says what a play surface can see of a
 --     board and what it may ask of it, and Reopening, where a board is
---     written down and had again. Neither says how anything looks.
+--     written down and had again and which stands whether or not a board
+--     is open. Neither says how anything looks.
 --
 -- Excludes
 --   - The rules: what a unit, a peer, a conflict and solved are, and what a
@@ -457,6 +458,9 @@ rule CheckCell {
     requires: target.holds_players_digit
 
     let board = target.board
+    -- Read before the check is kept, as a move's index is: one past the
+    -- checks already on the record.
+    let index = board.checks.count + 1
 
     -- solution_digit_at is a black box: the digit the one solution of these
     -- givens holds at this row and column. The givens are well-posed, since
@@ -466,7 +470,7 @@ rule CheckCell {
     ensures:
         Check.created(
             board: board,
-            index: board.checks.count + 1,
+            index: index,
             after_move: board.standing_moves.count,
             target: target,
             digit: target.puzzle_cell.digit,
@@ -731,13 +735,10 @@ surface Playing {
         -- yes or no of a check the player asked for.
 }
 
--- Where a board is written down and had again.
+-- Where a board is written down and had again. No board is its context:
+-- reopening is how a board comes to be from a record, so this surface
+-- stands whether or not one is open, and write takes the board it writes.
 surface Reopening {
-    context board: Board
-
-    exposes:
-        board.puzzle.givens
-
     contracts:
         fulfils Recording
 
@@ -748,8 +749,9 @@ surface Reopening {
 
     @guarantee ARecordIsEnoughOnItsOwn
         -- A record carries everything reopening needs. Nothing else is
-        -- consulted: not the store it came from, not the solution and not
-        -- any other record.
+        -- consulted: not the store it came from, not the solution, not any
+        -- other record and not a board already open, since there need be
+        -- none.
 }
 
 ------------------------------------------------------------
