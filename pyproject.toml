@@ -52,6 +52,10 @@ ban-relative-imports = "all"
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
+# Ruff formats the Python fences inside Markdown too. The skill text under
+# .agents/skills/ and allium-skill-reference/ is vendored, not this game's to
+# reformat, and the gate's format hook runs on .py files alone.
+exclude = ["*.md"]
 
 [tool.typos.files]
 # Lockfiles carry hashes that look like typos.

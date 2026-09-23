@@ -19,7 +19,9 @@
 --
 -- Includes
 --   - The board: one for every puzzle set, opened as the puzzle is and laid
---     out with one cell of its own for each cell of the grid.
+--     out with one cell of its own for each cell of the grid. A record
+--     reopened sets its puzzle again, so a reopened board is opened the
+--     same way and then made whole from the record.
 --   - Notes: each cell's marks, the digits the player has written in it to
 --     say it might hold them. A mark goes only in an empty cell that is not
 --     given. Writing a mark and striking one are the player's two moves on
@@ -60,11 +62,14 @@
 --     placement may do. sudoku.allium's, read through the puzzle and never
 --     re-decided here. The guards a move restates below are the rules' own,
 --     read from the puzzle so that a move the rules would refuse is never
---     recorded. Undo and redo write a cell's digit back to what a move the
+--     recorded; one guard is the board's own, that a placement changes the
+--     digit. Undo and redo write a cell's digit back to what a move the
 --     rules admitted left there; they restore states the rules reached and
 --     make no move of their own.
 --   - Where a puzzle comes from. A board opens on whatever sudoku.allium's
 --     PuzzleSetting admits, so this module has no setting surface of its own.
+--     Reopening a record puts its givens to SetPuzzle, so a reopened board
+--     too opens on what PuzzleSetting admits.
 --   - Finding the solution. solution_digit_at below is a black box for that
 --     reason, as solution_count is in sudoku.allium; solver.allium decides it
 --     and is not imported.
@@ -282,6 +287,12 @@ rule Place {
     requires: target.board.puzzle.status = unsolved
     requires: not target.puzzle_cell.is_given
     requires: digit >= 1 and digit <= config.side
+
+    -- The board's own guard, stricter than the rules': PlaceDigit lets a
+    -- cell holding the player's digit take the same one again, but a move
+    -- that changes nothing is not a move, so it is refused here and never
+    -- joins the record or discards what was undone.
+    requires: target.puzzle_cell.digit = null or target.puzzle_cell.digit != digit
 
     -- Read before anything changes: the peers whose note holds the digit are
     -- the ones upkeep strikes it from, hidden notes included, and no others.
@@ -609,6 +620,14 @@ invariant ACheckIsOnAPlayersCell {
 -- is a port's.
 contract Recording {
     write: (board: Board) -> Record
+
+    -- Reopening puts the record's givens to sudoku/SetPuzzle, so a record of
+    -- a puzzle the rules would not pose is refused, and the board OpenBoard
+    -- opens on the puzzle so set is made whole from the record: every digit,
+    -- every note shown or waiting, every move with its index and whether it
+    -- is undone, and every check as written. No move is re-made and no rule
+    -- of this module runs for what the record holds. The puzzle is a new one
+    -- with the one board OpenBoard gives it, so OneBoardToAPuzzle stands.
     reopen: (record: Record) -> Board
 
     @invariant ReopeningIsExact
@@ -683,7 +702,9 @@ surface Playing {
         -- In play a digit is placed or erased through this surface and no
         -- other, so every placement and erasure is recorded, kept up and
         -- reversible. What the surface puts to the rules is the rules' own
-        -- move, and a move the rules would refuse is refused here first.
+        -- move, and a move the rules would refuse is refused here first;
+        -- a placement the board refuses, the standing digit placed again,
+        -- never reaches them.
 
     @guarantee UndoAndRedoAreExact
         -- After undo the board stands exactly as it did before the move
@@ -749,9 +770,10 @@ surface Reopening {
 
     @guarantee ARecordIsEnoughOnItsOwn
         -- A record carries everything reopening needs. Nothing else is
-        -- consulted: not the store it came from, not the solution, not any
-        -- other record and not a board already open, since there need be
-        -- none.
+        -- consulted: not the store it came from, not the solution's digits,
+        -- since SetPuzzle's guard asks the solver for its verdict and nothing
+        -- more, not any other record and not a board already open, since
+        -- there need be none.
 }
 
 ------------------------------------------------------------

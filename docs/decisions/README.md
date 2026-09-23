@@ -31,10 +31,11 @@ the specifications under `docs/specs/`, and unresolved ones are recorded there a
 | [0008](0008-design-system-as-a-package.md) | The design system arrives as a package |
 | [0009](0009-rendered-from-the-template.md) | Rendered from the template |
 | [0010](0010-a-project-pages-site.md) | A project Pages site |
+| [0011](0011-executable-prototypes.md) | Executable models of specifications |
 
 ## The numbering
 
-The ten entries above came with the template this game was rendered from, and eight
+The first ten entries came with the template this game was rendered from, and eight
 of them were carried from Poodl, the first Biscuit Games game. Each of those says so
 under its heading and keeps the topic slug it had, because the slug is what a
 cross-repository reference names. The template never adds, renames or retitles a

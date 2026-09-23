@@ -168,6 +168,9 @@ the decision records it ships under `docs/decisions/`:
   its visual review.
 
 Deliberate deviations for this repository, each recorded in
-[the decision records](docs/decisions/README.md): none yet. Record one here
+[the decision records](docs/decisions/README.md):
+[Decision 0011](docs/decisions/0011-executable-prototypes.md), executable models
+of specifications under `prototypes/`, gated by `just proto-typecheck` and
+`just proto-test`. Record one here
 when this game departs from the template, and change the template instead
 when the departure would suit every game.
