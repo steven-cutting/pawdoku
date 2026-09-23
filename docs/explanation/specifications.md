@@ -58,9 +58,11 @@ microsteps and seeded repeated assessments, and the projection from its finer
 description of a player to `technique.allium`'s profile, so that one player can be put
 through all four and the results compared.
 `technique.allium` defines 29 techniques, including bounded chains and explicit
-uniqueness premises, and records how each question it once left open was resolved.
+uniqueness premises, and records how eight of the nine questions it once left open
+were resolved; partial marking and the loads past subsets remain open.
 `lapse.allium` records the same of its own seven, each answer deliberately simpler than
-`human-solving.allium`'s. `effort.allium` remains coarse and retains its open questions,
+`human-solving.allium`'s, and leaves one open: whether a player stuck under a guess with
+no contradiction in sight should withdraw it. `effort.allium` remains coarse and retains its open questions,
 which name the answer `human-solving.allium` gives where it gives one. Its [owning explanation](human-solving.md) states the
 research basis and provisional parameter choices. These are behavioural contracts
 for a future simulator; passing the Allium gates is not an empirical validation.

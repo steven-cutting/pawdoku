@@ -100,9 +100,7 @@ entity Run {
     -- The miss model entire: a deduction is seen when nothing about the
     -- profile hides it. Known, small enough to hold, narrow enough to take
     -- in, and read from marks only by a player who keeps them.
-    sees(x):
-        profile.knows(x) and profile.holds(x)
-            and profile.takes_in(x) and profile.can_read(x)
+    sees(x): profile.sees(x)
 
     sees_something: grid.deductions.any(x => sees(x))
 
@@ -328,9 +326,13 @@ invariant StalledSeesNothing {
         run.status = stalled implies not run.grid.is_filled and not run.sees_something
 }
 
-invariant NoRunIsContradictory {
+-- Of a rating, whose grid is laid out from givens and kept true. A hint's
+-- grid is the player's, and a digit that fits and is wrong can leave it
+-- with a cell that allows nothing; what a hint does then is the open
+-- question below.
+invariant NoRatingIsContradictory {
     for run in Runs:
-        run.grid != null implies not run.grid.is_contradictory
+        run.purpose = rating and run.grid != null implies not run.grid.is_contradictory
 }
 
 ------------------------------------------------------------

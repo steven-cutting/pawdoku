@@ -90,9 +90,7 @@ entity Run {
 
     -- What reach.allium calls seen. Here it only decides which deductions
     -- are tried first.
-    is_within(x):
-        profile.knows(x) and profile.holds(x)
-            and profile.takes_in(x) and profile.can_read(x)
+    is_within(x): profile.sees(x)
 
     has_something_within: grid.deductions.any(x => is_within(x))
 

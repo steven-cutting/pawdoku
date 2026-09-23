@@ -595,26 +595,35 @@ rule PerformMicrostep {
     when: attempt: Attempt.status transitions_to acting
     requires: attempt.status = acting
     requires: attempt.plan != null
+
+    -- Read before anything changes: the plan is cleared, the sheet and mind
+    -- replaced, and the step about to be recorded is not yet among the
+    -- steps. A creation parameter or an if guard below would otherwise
+    -- read the state the rule leaves.
+    let plan = attempt.plan
+    let index = attempt.steps.count + 1
+    let before_sheet = attempt.sheet
+    let before_mind = attempt.mind
     let effect = perform_action(
-        policy_input(attempt.request), attempt.sheet, attempt.mind,
-        attempt.plan.action, attempt.steps.count + 1, attempt.plan.next_cursor
+        policy_input(attempt.request), before_sheet, before_mind,
+        plan.action, index, plan.next_cursor
     )
     ensures:
         Microstep.created(
-            attempt: attempt, index: attempt.steps.count + 1,
-            action: attempt.plan.action,
-            before_sheet: attempt.sheet, before_mind: attempt.mind,
-            effect: effect, cost: attempt.plan.cost,
-            draws: concatenate(attempt.plan.draws, effect.draws)
+            attempt: attempt, index: index,
+            action: plan.action,
+            before_sheet: before_sheet, before_mind: before_mind,
+            effect: effect, cost: plan.cost,
+            draws: concatenate(plan.draws, effect.draws)
         )
         attempt.sheet = effect.sheet
         attempt.mind = effect.mind
-        attempt.spent = attempt.spent + attempt.plan.cost
+        attempt.spent = attempt.spent + plan.cost
         attempt.cursor = effect.next_cursor
-        if attempt.plan.action.kind = claim_finished:
+        if plan.action.kind = claim_finished:
             attempt.reason = claimed
             attempt.status = ended
-        else if attempt.plan.action.kind = give_up:
+        else if plan.action.kind = give_up:
             attempt.reason = abandoned
             attempt.status = ended
         else:

@@ -461,5 +461,5 @@ The practical conclusion is correspondingly simple. A strong **human solver** sh
 
 - [Specifications](specifications.md)
 - [`solver.allium`](../specs/solver.allium) — the verdict solver specified from the algorithmic half of this page.
-- [`technique.allium`](../specs/technique.allium) — the human techniques of this page, specified through subsets, and the player models [`reach.allium`](../specs/reach.allium), [`effort.allium`](../specs/effort.allium) and [`lapse.allium`](../specs/lapse.allium) built on them.
+- [`technique.allium`](../specs/technique.allium) — the human techniques of this page, specified through subsets, and the player models [`reach.allium`](../specs/reach.allium), [`effort.allium`](../specs/effort.allium), [`lapse.allium`](../specs/lapse.allium) and [`human-solving.allium`](../specs/human-solving.allium) built on them.
 - [`sudoku.allium`](../specs/sudoku.allium) — the rules every strategy here answers to.

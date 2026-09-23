@@ -74,13 +74,14 @@
 --   hidden single read from the placed digits alone, in a box or, by the same
 --   crossing-out, in a line. Subset for a pair, a triple or a quad.
 --   For the patterns past subsets: bivalue, of an open cell with two
---   candidates; conjugate pair, a digit's only two places in a unit. Link,
---   two candidates joined weakly (at most one is true) or strongly (at least
---   one is); literal, a candidate asserted or denied; path, literals each
---   following from the last by one link. Base and cover, the two sets of
---   lines a fish is read across. Proof, the units, links and paths a
---   deduction rests on; witness, one particular place a technique holds,
---   with its proof, as against the technique holding somewhere.
+--   candidates; conjugate pair, an unplaced digit's only two places in a
+--   unit. Link, two candidates joined weakly (at most one is true) or
+--   strongly (at least one is); literal, a candidate asserted or denied;
+--   path, literals each following from the last by one link. Base and
+--   cover, the two sets of lines a fish is read across. Proof, the units,
+--   links and paths a deduction rests on; witness, one particular place a
+--   technique holds, with its proof, as against the technique holding
+--   somewhere.
 
 use "./sudoku.allium" as sudoku
 
@@ -183,8 +184,9 @@ value Proof {
 value Deduction {
     technique: Technique
 
-    -- The primary unit for the first twelve techniques; absent for a naked
-    -- single and for the patterns spanning several units.
+    -- The primary unit for the first twelve techniques except the naked
+    -- single, which has none; absent for the patterns spanning several
+    -- units.
     unit: UnitRef?
 
     extent: Extent
@@ -206,7 +208,7 @@ value Deduction {
 -- A player. Every figure is a field and none is config, because config in
 -- these modules names a number and does not tune one; a player is tuned.
 -- Each model reads the fields its header names and ignores the rest, so one
--- profile can be put through all three and the results compared.
+-- profile can be put through all four and the results compared.
 value Profile {
     -- The techniques the player knows.
     repertoire: Set<Technique>
@@ -246,6 +248,10 @@ value Profile {
     holds(x): x.load <= capacity
     takes_in(x): x.extent in spans
     can_read(x): not x.technique.reads_marks or marking = full_marks
+
+    -- What no part of the profile hides. Each model reads this as its own
+    -- seeing or being within, and none restates it.
+    sees(x): knows(x) and holds(x) and takes_in(x) and can_read(x)
 }
 
 ------------------------------------------------------------
@@ -371,9 +377,13 @@ entity Unit {
 
     -- Pointing and claiming ---------------------------------
 
-    -- Two places or more. With one it is a hidden single.
+    -- Two places or more, for a digit still to be placed here. With one it
+    -- is a hidden single. A digit the unit has placed has no places,
+    -- whatever stale marks still allow: without this, pointing and claiming
+    -- would strike on an unkept grid what the solution needs.
     has_places(d):
-        open_cells.any(a => open_cells.any(b => a != b and a.allows(d) and b.allows(d)))
+        not (d in placed_digits)
+            and open_cells.any(a => open_cells.any(b => a != b and a.allows(d) and b.allows(d)))
 
     -- A box whose places for a digit lie in one row, which allows the digit
     -- somewhere outside the box. The box must hold the digit, so it holds it
@@ -925,18 +935,19 @@ surface Catalogue {
         -- separate witness. Merely sharing a candidate is insufficient.
 
     @guarantee SingleDigitPatterns
-        -- Skyscraper: two parallel lines each have exactly two places for d.
-        -- One endpoint from each lies on the same perpendicular line; the
-        -- other endpoints lie on different perpendicular lines. Strike d
-        -- from other cells seeing both unaligned endpoints.
+        -- Skyscraper: two parallel lines each have exactly two places for
+        -- unplaced d. One endpoint from each lies on the same perpendicular
+        -- line; the other endpoints lie on different perpendicular lines.
+        -- Strike d from other cells seeing both unaligned endpoints.
         -- Two-String Kite: a row conjugate pair and a column conjugate pair
         -- for d, four distinct cells; one endpoint from each shares a box.
         -- Strike d from other cells seeing both remaining endpoints.
-        -- Empty Rectangle: all d places in a box lie in row R or column C;
-        -- both arms are nonempty, their intersection lacks d, at least three
-        -- places exist. Outside the box, P=(R,K), Q=(S,K) form a column
-        -- conjugate pair for d. Strike d at (S,C) outside the box. Also
-        -- transpose this construction. The two-place variant is deferred.
+        -- Empty Rectangle: all places of unplaced d in a box lie in row R or
+        -- column C; both arms are nonempty, their intersection lacks d, at
+        -- least three places exist. Outside the box, P=(R,K), Q=(S,K) form a
+        -- column conjugate pair for d. Strike d at (S,C) outside the box.
+        -- Also transpose this construction. The two-place variant is
+        -- deferred.
 
     @guarantee LinkMeaning
         -- A node is a standing candidate. Distinct nodes are weakly linked
@@ -1041,9 +1052,11 @@ surface Catalogue {
         -- Hidden single: only r1c1 allows 4 in row1, with {4,8}; place 4.
         -- Add 4 at another open row1 cell and that witness is rejected.
         -- Pointing: box1 has 7 only at r1c1,r1c2; strike it from r1c4.
-        -- Add 7 at r2c3 and reject that row-pointing witness.
+        -- Add 7 at r2c3 and reject that row-pointing witness. A 7 already
+        -- placed in box1 rejects it whatever the marks say.
         -- Claiming: row1 has 7 only at r1c1,r1c2; strike it from r2c3.
-        -- Add 7 at r1c4 and reject that claiming witness.
+        -- Add 7 at r1c4 and reject that claiming witness. A 7 already
+        -- placed in row1 rejects it whatever the marks say.
         -- Naked pair: {1,2},{1,2}; triple: {1,2},{2,3},{1,3};
         -- quad: {1,2},{2,3},{3,4},{1,4}, each in one unit.
         -- Strike their union from another cell. Add a new digit outside
@@ -1069,7 +1082,8 @@ surface Catalogue {
         -- W-Wing: P=r1c1,Q=r4c4 both {1,2}, conjugate
         -- 1 at r1c7,r4c7; strike 2 at r1c4. A third 1 in c7 rejects.
         -- Skyscraper: d only c1c5 in r1, c1c6 in r4; strike r2c6=d.
-        -- A third base-line place rejects. Two-String Kite: d only r1c1,
+        -- A third base-line place rejects, as does d placed in a base
+        -- line. Two-String Kite: d only r1c1,
         -- r1c5 in r1 and r2c2,r5c2 in c2; strike r5c5=d. Move the
         -- joined endpoints so they do not share a box: reject the witness.
         -- Empty Rectangle: d in box5 only r4c5,r4c6,r5c4; conjugate d

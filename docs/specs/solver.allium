@@ -40,8 +40,9 @@
 --     chains. A solver may make them, since none removes a candidate a
 --     solution uses, but none is owed. They are technique.allium's.
 --   - Steps a person could follow, hints, and how hard a puzzle is. A verdict
---     explains nothing. Those are reach.allium's, effort.allium's and
---     lapse.allium's, which stand on technique.allium and not on this module.
+--     explains nothing. Those are reach.allium's, effort.allium's,
+--     lapse.allium's and human-solving.allium's, which stand on
+--     technique.allium and not on this module.
 --   - Finding givens, and solving from a puzzle in play. The search reads
 --     givens and nothing a player has placed.
 --   - Variants, as sudoku.allium excludes them.

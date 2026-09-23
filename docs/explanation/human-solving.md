@@ -12,11 +12,10 @@ requires: []
 fresh Sudoku and an assessment of that puzzle for a particular profile. An attempt
 records what the person inspects, remembers, tries, misses, writes and corrects.
 Repeating it with declared seeds produces solve counts and effort distributions.
-These specifications define future simulator behaviour; this change does not supply
-an executable simulator or a new game surface.
+These specifications define future simulator behaviour; no executable simulator or
+game surface exists yet.
 
-The [strategy survey](solving-sudoku.md), originally requested as
-`docs/scratch/solving_sudoku.md`, supplies background.
+The [strategy survey](solving-sudoku.md) supplies background.
 [technique.allium](../specs/technique.allium) owns the precise logical catalogue.
 This page owns the rationale, evidence limits, tuning guide and route from those
 contracts to validation. The Allium clauses remain authoritative.
