@@ -60,7 +60,10 @@
 --   a placement the player wrote. Note, one cell's written marks together
 --   with a claim of coverage; a mark is still one written candidate. Fact, a
 --   proposition the player has acquired, which may be false; chunk, facts
---   held as one. Observer, the judge that sees the solution and never steers.
+--   held as one. A coverage fact is the player's running possibility set for
+--   one cell or one digit in one unit, held as one item and grown by folding
+--   other facts into it. Observer, the judge that sees the solution and
+--   never steers.
 --   Capacity here counts retained chunks, fatigue is a state between zero and
 --   one, and patience counts fruitless episodes; technique.allium's Profile
 --   uses the same three words for coarser figures, and the projection below
@@ -242,9 +245,18 @@ value Fact {
     source: SourceKind
     supports: Set<Integer>
     confidence: Decimal
-    -- One atomic proposition, or coverage of one cell's nine alternatives /
-    -- one digit's nine positions in a unit. A coverage fact is not all the
-    -- underlying facts. Those needed by an inference must also be retained.
+    remaining: Set<Integer>?
+    checked: Boolean?
+    -- One atomic proposition, or coverage: the possibility set of one cell's
+    -- nine alternatives or one digit's nine positions in a unit. remaining
+    -- and checked are present exactly when kind is coverage: remaining holds
+    -- the alternatives not yet folded out; checked is the player's claim
+    -- that every source was examined (the cell's twenty peers, or the
+    -- unit's nine positions), earned by their own folds or read from a
+    -- coverage flag, and it may be false.
+    -- A coverage fact is one item however many facts it has folded; supports
+    -- names each of them, and they need not stay live. It is a tally, not a
+    -- bundle: it does not keep its premises addressable, so it is not a chunk.
     -- supports names earlier trace facts, including fallible ones.
 }
 
@@ -252,8 +264,9 @@ value MemoryItem {
     facts: Set<Fact>
     method: technique/Technique?
     refreshed_at: Integer
-    -- A raw fact is one item. Multiple facts require a learned, recognized
-    -- chunk of this method; no arbitrary bundle can be called one chunk.
+    -- A raw fact is one item, and a coverage fact is one raw item. Multiple
+    -- facts require a learned, recognized chunk of this method; no arbitrary
+    -- bundle can be called one chunk.
 }
 
 value BranchBelief {
@@ -824,7 +837,11 @@ surface Simulation {
         -- All retained puzzle propositions, pending conclusions, unfinished
         -- proofs and unwritten branch data count against capacity. A focus
         -- address and control counters are metadata, not stored board facts.
-        -- Raw facts consume one chunk each. A multi-fact chunk must match a
+        -- Raw facts consume one chunk each. A coverage fact consumes one
+        -- whatever it has folded; a fact folded into it may be evicted
+        -- without changing the set, and which sources it has folded is
+        -- bookkeeping the set carries, like a control counter, not further
+        -- facts. A multi-fact chunk must match a
         -- previously recognized familiar pattern, contain at most the
         -- effective skill's chunk_facts, and preserve individually addressable
         -- premises. A phrase like "the whole grid" cannot be one chunk.
@@ -845,9 +862,19 @@ surface Simulation {
         -- one cell-digit mark, coverage flag, or branch checkpoint fragment.
         -- The intended edit uses a retained fact, then entry_error may
         -- substitute one other legal edit. Given entries cannot be edited.
-        -- Missing manual marks mean unknown until a valid coverage assertion
-        -- and its candidate facts establish a complete set. Partial positive
-        -- marks alone never establish excluded candidates or strong links.
+        -- Writing a coverage flag needs a retained checked coverage fact;
+        -- writing a mark needs a possible fact or a coverage fact that
+        -- still holds that digit, checked or not, so notes may be partial.
+        -- Reading a coverage flag yields a coverage fact with checked true,
+        -- remaining full and no mark yet folded. A present mark read yields
+        -- a possible fact; an absent mark read yields an excluded fact from
+        -- manual_note only while a checked coverage fact for that cell is
+        -- retained, else nothing. Folding each such fact settles that
+        -- alternative, present stays and absent leaves, and which marks
+        -- have been folded is the set's bookkeeping. Missing manual marks
+        -- mean unknown until such a coverage fact has folded every mark.
+        -- Partial positive marks alone never establish excluded candidates
+        -- or strong links.
         -- A player may falsely believe coverage through an error; resulting
         -- moves are attempted inferences, not sound catalogue deductions.
         -- Changing an entry never silently repairs manual notes or memory.
@@ -896,18 +923,34 @@ surface Simulation {
         -- or a guarantee that a familiar method will be noticed.
 
     @guarantee BoundedElementaryReasoning
-        -- Every profile knows the rules. infer performs ONE implication:
-        -- a known placement excludes that digit from a peer; an excluded
-        -- alternative is removed from a checked cell/unit possibility set;
-        -- exhaustive alternatives leaving one assert that one; a checked
-        -- set of k positions restricted to k digits reserves those digits;
+        -- Every profile knows the rules. infer performs ONE paid move,
+        -- of three kinds. Construct: a cell's coverage fact from a retained
+        -- empty fact for that cell, or a unit-digit's from public geometry;
+        -- all nine alternatives remain and no source is folded, and the
+        -- empty fact enters supports and need not stay live. A set is
+        -- never inferred from marks alone. Fold: one live premise settles
+        -- one alternative or one source: a peer's placement removes its
+        -- digit from a cell's set; a position holding another digit, or
+        -- excluded by a peer holding the digit, leaves a unit-digit set; a
+        -- placement of the digit inside the unit ends that set with nothing
+        -- to find; an empty peer folds with no removal. Conclude, one
+        -- implication: a known placement excludes that digit from a peer;
+        -- one remaining alternative asserts it; nothing
+        -- remaining is the contradiction GuessesAndRecovery names; k checked
+        -- sets of k positions restricted to k digits reserve those digits;
         -- a verified weak/strong link carries one literal implication; or
         -- completed exhaustive cases yield their common conclusion.
         -- Every membership, exclusion, coverage and exhaustiveness premise
-        -- must be in retained facts or an eligible learned chunk. Constructing
-        -- a set, comparing one pair, or adding one implication is a separate
-        -- paid action. Reasoning depth bounds consecutive implications in an
-        -- episode; capacity still bounds simultaneously live premises.
+        -- must be live, in retained facts or an eligible learned chunk, at
+        -- the step that consumes it. A coverage fact stands for what was
+        -- folded into it, and the observer judges a conclusion drawn from
+        -- one through the closure of its supports, so a folded misread
+        -- still taints it. Comparing one pair or adding one implication is
+        -- likewise a separate paid action. Reasoning depth bounds a chain:
+        -- consecutive implications each taking the previous conclusion as
+        -- a premise. Constructing and folding are not chain steps; capacity,
+        -- retention, interference and effort bound them instead, and
+        -- capacity still bounds simultaneously live premises.
         -- A bound failure yields reasoning_limit, not a forced answer.
         -- inference_error uses min(1,p*(1+fatigue)) and the same explicit
         -- premise/digit/target fault operations as recognition.
@@ -921,8 +964,9 @@ surface Simulation {
     @guarantee ChoiceAndBias
         -- The initial policy searches cells, digits and units, not deductions.
         -- At each choice it enumerates eligible local actions from Mind:
-        -- reading missing premises, trying a familiar method, extending an
-        -- elementary episode, noting a retained fact, checking a proposal,
+        -- reading missing premises, trying a familiar method, folding a live
+        -- fact into a coverage fact, extending an elementary episode, noting
+        -- a retained fact, checking a proposal,
         -- committing a sufficiently confident proposal, or changing focus.
         -- Eligibility may use public geometry and retained facts only.
         -- Base weights are 1; a familiar-method action uses skill.habit.
@@ -958,8 +1002,8 @@ surface Simulation {
         -- Bounded forcing proofs that never commit speculation are infer
         -- actions; they remain separate from guess events.
         -- A contradiction must be noticed: observed equal peer entries,
-        -- observed exhaustion of a cell/unit's checked alternatives, or
-        -- explicit permitted feedback. The observer cannot trigger repair.
+        -- a coverage fact with nothing remaining, or explicit permitted
+        -- feedback. The observer cannot trigger repair.
         -- Recovery chooses the newest accessible branch or a suspected
         -- erroneous entry/mark. backtrack recalls one recorded change; an
         -- unwritten change is recalled correctly with branch_recall, else
@@ -975,6 +1019,8 @@ surface Simulation {
         -- elementary episode ended without a usable conclusion, or a
         -- planned scan completed with no noticed lead; count it once.
         -- It adds frustration_gain to frustration and one to fruitless.
+        -- A fold that removes nothing continues its episode and is not
+        -- fruitless by itself.
         -- A noticed error also adds frustration_gain, not a search failure.
         -- Perceived progress resets fruitless, clears episode_depth and
         -- subtracts progress_relief from frustration, floored at zero.
@@ -1157,6 +1203,19 @@ surface Acceptance {
         -- when only experience changes. With no errors, a ready familiar
         -- pattern may be recognized; an unfamiliar one requires elementary
         -- steps and may be completed within its bounds without being learned.
+
+    @guarantee ElementaryDeductionWithinCapacity
+        -- With every error and interference rate zero, notice 1 and standard
+        -- retention, rules_only_novice on paper derives the last digit of a
+        -- valid puzzle with eighty givens, by the cell's set and by a unit's
+        -- set for that digit. No step needs more than two items live: the
+        -- coverage fact with one inspected entry, or with the pending
+        -- conclusion. The derivation completes with capacity 2, and no
+        -- episode exceeds depth one. A fact folded early may be evicted
+        -- before the conclusion without changing it. With capacity 1 the
+        -- same derivation stops at capacity_limit or forgotten, since the
+        -- set and its next premise cannot both be live. Every profile has
+        -- this route; experience adds recognition, not the rules.
 
     @guarantee PresetsMeetTheCoarsePresets
         -- expert_player under paper projects to technique/expert's

@@ -120,7 +120,7 @@ All four experience presets use `standard_ability` unchanged.
 | `interference` | 0.02 | Probability per retained item on focus change | More content is lost when attention switches. |
 | `attention_cells` | 3 | 1–9 focused positions | More positions can be inspected before another focus change. Each fact still requires its own inspection. |
 | `switch_effort` | 2 | 0–20 effort units | Moving focus or changing the selected digit costs more. |
-| `reasoning_depth` | 8 | 0–24 implications per episode | Longer elementary derivations become possible; zero disables their implication steps. |
+| `reasoning_depth` | 8 | 0–24 chained implications per episode, each taking the previous conclusion as a premise | Longer elementary derivations become possible; zero disables their implication steps. Constructing a possibility set and folding facts into it are not chain steps. |
 | `notice` | 0.90 | Probability per inspected fact | More requested facts are noticed; it also supplies initial perceived confidence. |
 | `perception_error` | 0.01 | Probability per noticed fact | More facts are misread. |
 | `inference_error` | 0.01 | Probability per attempted inference | More premise, digit or target mistakes occur. |
@@ -128,9 +128,13 @@ All four experience presets use `standard_ability` unchanged.
 
 Capacity counts chunks, not cells. A raw atomic fact occupies one chunk. A learned
 chunk has explicitly bounded contents and a recognized pattern; it cannot encode
-the whole puzzle under a convenient name. Every needed premise must remain available
-when an inference uses it. A trace available to the observer is not external memory
-available to the person.
+the whole puzzle under a convenient name. A coverage fact is the person's running
+possibility set for one cell or one digit in one unit: one item however many facts
+have been folded into it, a tally rather than a bundle, because it keeps no premise
+addressable. Every needed premise must be live at the step that consumes it, not for
+the whole proof; a fact folded into a set may be forgotten without changing the set,
+and the observer still judges the conclusion through everything that was folded. A
+trace available to the observer is not external memory available to the person.
 
 Familiar fragments, such as a checked bivalue cell or a witnessed link, can be
 grouped through paid recognition before the person attempts a larger pattern.
@@ -330,7 +334,7 @@ The specification carries these acceptance obligations for eventual implementati
 | Logical soundness | Verify that licensed placements and strikes preserve all solutions under their declared premises; test valid digit and grid symmetries. |
 | Information boundary | A partial note cannot become an exhaustive candidate set; uninspected cells and observer-only deductions cannot influence a move. |
 | Ability versus experience | Independent changes preserve the other parameter group; unfamiliar derivation spends elementary steps. |
-| Memory | Overflow, expiry, rehearsal, offloading and rereading leave explicit state changes and effort. |
+| Memory | Overflow, expiry, rehearsal, offloading, rereading and folding into a possibility set leave explicit state changes and effort. A rules-only novice derives the last digit of an eighty-given puzzle with no step needing more than two items live, completing with capacity 2 and stopping with capacity 1. |
 | Errors and recovery | Controlled draws produce distinct misread, inference and entry faults; detection and repair require player actions. A lucky guess remains speculative. |
 | Replay and stopping | Identical versioned inputs replay exactly; every loop, rest and repair is bounded, and a stopped attempt is not an unsolvability verdict. |
 | Assessment | All declared runs survive aggregation; failures and successes remain separate, including empty successful samples. |
