@@ -116,10 +116,11 @@ installed as a hook and runs only from `just fix`.
 
 ## In continuous integration
 
-`.github/workflows/ci.yml` runs every recipe in the table but two in three jobs, from a
-workflow every game shares: its one job, `ci`, calls `game-ci.yml` in
-`steven-cutting/biscuit_games_tooling` at a pinned release. `frontend` runs the
-install, `lock-check`, `frontend-static`, `frontend-coverage` and `frontend-build`;
+`.github/workflows/ci.yml` runs the recipes in the table in three jobs, all but
+`proto-typecheck`, `proto-test` and `check-clean`, from a workflow every game shares: its
+one job, `ci`, calls `game-ci.yml` in `steven-cutting/biscuit_games_tooling` at a pinned
+release. `frontend` runs the install, `lock-check`, `frontend-static`, `frontend-coverage`
+and `frontend-build`;
 `documents` runs `sync`, then `install-allium` — the binary no lockfile can name — then
 `lint`, `check-docs`, `check-agents`, `check-specs` and `analyse-specs`; `stories`
 restores the Playwright cache, installs the browser, then runs `storybook-build` and `storybook-test`.
