@@ -77,6 +77,12 @@ format:
     uv run --frozen ruff format .
     npm run format
 
+# Accepts changed renderings in the prototype's inline snapshots. Read them
+# first: the renderings are the review, and this recipe writes whatever the
+# model now says into the test files.
+proto-accept:
+    uv run --frozen pytest --inline-snapshot=fix
+
 fix:
     -uv run --frozen prek run --all-files --config .pre-commit-fix.yaml
     uv run --frozen prek run --all-files --config .pre-commit-fix.yaml
@@ -112,6 +118,17 @@ storybook-build:
 # measured for coverage — the floor over src/lib/** stays a claim about tests/.
 storybook-test:
     npm run storybook:test
+
+# The prototype's types, under mypy --strict. A given cell's type has no move
+# to take, so this is where two of the spec's invariants are proved.
+proto-typecheck:
+    uv run --frozen mypy
+
+# The executable model of docs/specs/board.allium under prototypes/board/,
+# held to the spec's invariants after every step. Not the application. Changed
+# renderings are accepted, after reading, by `just proto-accept`.
+proto-test:
+    uv run --frozen pytest
 
 # --------------------------------------------------------------- documents ---
 

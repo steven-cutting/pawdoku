@@ -26,7 +26,9 @@ is ignored.
 | 9 | `check-agents` | The agent contract holds. |
 | 10 | `check-specs` | Every specification reports an empty `diagnostics` array. |
 | 11 | `analyse-specs` | Every specification reports an empty `findings` array too. |
-| 12 | `check-clean` | The run changed nothing. |
+| 12 | `proto-typecheck` | The Python model of `board.allium` under `prototypes/` holds under `mypy --strict`, which proves two of the specification's invariants from the types. |
+| 13 | `proto-test` | The model passes: every scenario, and every other named invariant after every step. |
+| 14 | `check-clean` | The run changed nothing. |
 
 Gates 10 and 11 cost the gate something real: the pinned `allium` binary lives in the
 gitignored `.tools/bin/`, which is a per-worktree install, so a worktree that has never
@@ -80,7 +82,7 @@ configuration, and it is the one installed as the pre-commit hook.
 
 | Hook | Checks |
 | --- | --- |
-| `ruff-check`, `ruff-format-check` | Any Python file the game adds; none ships. |
+| `ruff-check`, `ruff-format-check` | Any Python file the game adds: today the model of `board.allium` under `prototypes/`, which `just proto-typecheck` also holds under `mypy --strict`. |
 | `editorconfig-checker` | Whitespace, line endings, final newlines. |
 | `eslint` | ESLint and `prettier --check` across the application, the stories, and the workshop configuration. |
 | `validate-docs`, `validate-agents` | The two contracts, so a hook catches them before the aggregate does. |
@@ -114,13 +116,17 @@ installed as a hook and runs only from `just fix`.
 
 ## In continuous integration
 
-`.github/workflows/ci.yml` runs the same recipes in three jobs, from a workflow every game
-shares: its one job, `ci`, calls `game-ci.yml` in `steven-cutting/biscuit_games_tooling` at
-a pinned release. `frontend` runs the
-install, `lock-check`, `frontend-static`, `frontend-coverage` and `frontend-build`;
+`.github/workflows/ci.yml` runs the recipes in the table in three jobs, all but
+`proto-typecheck`, `proto-test` and `check-clean`, from a workflow every game shares: its
+one job, `ci`, calls `game-ci.yml` in `steven-cutting/biscuit_games_tooling` at a pinned
+release. `frontend` runs the install, `lock-check`, `frontend-static`, `frontend-coverage`
+and `frontend-build`;
 `documents` runs `sync`, then `install-allium` — the binary no lockfile can name — then
 `lint`, `check-docs`, `check-agents`, `check-specs` and `analyse-specs`; `stories`
 restores the Playwright cache, installs the browser, then runs `storybook-build` and `storybook-test`.
+`proto-typecheck` and `proto-test` run locally only: the shared workflow is pinned at
+`v0.1.0`, which predates both recipes, so until a release carries them a red model merges
+green and `just check` is where it is proved.
 Past installing Python, `just` and npm themselves, which that repository's
 `setup-toolchain` action does, nothing in CI runs a command that does not exist in the
 `Justfile`. The workshop build the gate makes is proved and then

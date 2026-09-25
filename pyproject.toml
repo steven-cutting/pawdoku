@@ -8,8 +8,16 @@ dependencies = []
 [dependency-groups]
 dev = [
   "biscuit-games-tooling @ git+https://github.com/steven-cutting/biscuit_games_tooling@v0.2.0",
+  "mypy==2.3.1",
   "prek==0.4.12",
   "ruff==0.16.2",
+]
+# The executable model of docs/specs/board.allium under prototypes/, which
+# `just proto-test` runs. Not the application: see docs/project/repository-map.md.
+proto = [
+  "attrs==26.1.0",
+  "inline-snapshot==0.35.4",
+  "pytest==9.1.1",
 ]
 
 [tool.uv]
@@ -17,13 +25,13 @@ dev = [
 # can provide a pinned prek, ruff and biscuit-games-tooling to the hooks and
 # recipes; see docs/decisions/0004-python-toolchain.md.
 package = false
-default-groups = ["dev"]
+default-groups = ["dev", "proto"]
 
 [tool.ruff]
 line-length = 99
 target-version = "py314"
 unsafe-fixes = false
-src = ["scripts"]
+src = ["scripts", "prototypes"]
 
 [tool.ruff.lint]
 select = [
@@ -47,11 +55,34 @@ ban-relative-imports = "all"
   "ANN", "BLE001", "EM101", "EM102", "INP001", "PLR0912", "PLR0915",
   "PLR2004", "S404", "S603", "S607", "T201", "TRY003",
 ]
+# Tests assert, compare against literal digits and positions, and take no
+# annotations beyond their own signatures.
+"prototypes/board/tests/**" = ["ANN", "INP001", "PLR2004", "S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["prototypes/board/tests"]
+pythonpath = ["prototypes"]
+# No cache directory: `just check` snapshots the worktree between recipes.
+addopts = "-p no:cacheprovider"
+
+[tool.mypy]
+# The prototype's cells are typed values: a given cell has no move to take,
+# and this is what proves it. Strict over the model and its tests alike.
+files = ["prototypes"]
+mypy_path = "prototypes"
+strict = true
+python_version = "3.14"
+# No cache directory, for the same reason pytest has none.
+cache_dir = "/dev/null"
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
+# Ruff formats the Python fences inside Markdown too. The skill text under
+# .agents/skills/ and allium-skill-reference/ is vendored, not this game's to
+# reformat, and the gate's format hook runs on .py files alone.
+exclude = ["*.md"]
 
 [tool.typos.files]
 # Lockfiles carry hashes that look like typos.
@@ -71,7 +102,7 @@ mis = "mis"
 recipes = [
   "lock-check", "lint", "frontend-static", "frontend-coverage", "frontend-build",
   "storybook-build", "storybook-test", "check-docs", "check-agents", "check-specs",
-  "analyse-specs",
+  "analyse-specs", "proto-typecheck", "proto-test",
 ]
 # Predicates a page's `requires` may name, true when enabled. None yet.
 predicates = {}

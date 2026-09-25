@@ -64,7 +64,7 @@ leaks between tests and hides the fact that the code reached outside its layer.
 ## Enforcement
 
 There is no import-boundary checker here: a three-directory frontend does not earn the
-machinery. The direction is enforced by review, by the `svelte-change` and `code-review`
+machinery. The direction is enforced by review, by the `svelte-change` and `review-change`
 skills, and by the shape of the tests: code in the wrong layer is usually code that is
 hard to test.
 

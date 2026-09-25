@@ -26,8 +26,10 @@ scripts are the checkers themselves, pinned to a release tag of
 `steven-cutting/biscuit_games_tooling`.
 
 Ruff is added on top of the inherited gate list so that Python this game adds is linted in
-a repository that gates everything else. None ships today: the checkers moved into the
-package, and `scripts/` holds the first-run script and the browser preflight.
+a repository that gates everything else. None shipped when this was decided: the checkers
+moved into the package, and `scripts/` holds the first-run script and the browser
+preflight. [Decision 0011](0011-executable-prototypes.md) is where the executable models
+under `prototypes/` came in.
 
 ## Consequences
 

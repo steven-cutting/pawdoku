@@ -15,8 +15,8 @@ them loosely is how a review ends up arguing about vocabulary instead of behavio
 
 The game adds a row for every term its specification names. The Sudoku terms are
 `sudoku.allium`'s, which picks one word where the game's literature has several, the
-solving terms are `solver.allium`'s, and the terms of a person solving are
-`technique.allium`'s and its four models'.
+solving terms are `solver.allium`'s, the terms of a puzzle in play are `board.allium`'s,
+and the terms of a person solving are `technique.allium`'s and its four models'.
 
 | Term | Meaning |
 | --- | --- |
@@ -33,6 +33,13 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Well-posed | Having exactly one solution. Every puzzle a setter may pose is. Never proper. |
 | Conflict | Two peers holding the same digit. The rules permit it and both cells are in it. |
 | Solved | Every cell holds a digit and none conflicts. Final: a solved puzzle takes no more moves. |
+| Board | The puzzle in play: a puzzle, a note in every cell, the moves made and the checks asked. `board.allium`'s, as are the six terms below. A board draws nothing; what draws one is a rendering. |
+| Move | One of the four things a player does to a board: place a digit, erase one, write a mark or strike one. Recorded with what it displaced, so it can be taken back exactly. Standing until undone; undone until re-taken, or discarded by a new move. |
+| Undo, redo | Taking back the latest standing move, and re-taking the latest move undone. Both stop once the puzzle is solved. |
+| Reading back | The board as it stood once any move and no later one had been made, read from the moves and never by taking any back. |
+| Check | On the board: the player's question whether one cell's digit is the solution's, answered yes or no and never with a digit. Every check is kept and none is a move. In `lapse.allium` a different thing under the same word, below. |
+| Record, reopen | A board written down whole, and the board had again from it: the same puzzle, digits, notes, moves, undone moves and checks. What a record is made of is a store's, behind the storage port. |
+| Upkeep | Striking a placed digit from its peers' marks. On the board it is always whole, hidden notes included; in `technique.allium` a profile's upkeep is the unit kinds it reaches. |
 | Candidate | A digit a cell may still hold while givens are being solved. `solver.allium`'s, as are the seven terms below. |
 | Search | The solving of one set of givens, from the moment they are handed over to its verdict. |
 | Branch | One grid of candidates within a search. One works at a time, and a guess splits it into a child for each candidate of one cell. |
@@ -46,7 +53,7 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Deduction | One place a technique holds on a grid: where, with which digits, and what it places or strikes. |
 | Placement | A digit a deduction, or a guess, puts in a cell. |
 | Strike | Candidates a deduction removes from a cell. Never eliminate. |
-| Mark | A candidate as the player has it written. Stale when a placed peer rules it out; lapsed marks are marks left stale. |
+| Mark | A candidate as the player has it written. Stale when a placed peer rules it out; lapsed marks are marks left stale. On the board, one digit of a cell's note. |
 | Subset | A pair, a triple or a quad, naked or hidden. |
 | Cross-hatch | A hidden single read from the placed digits alone, with no marks, in a box or a line. |
 | Pointing, claiming | A box whose places for a digit lie on one line, and a line whose places lie in one box. Never box-line reduction. |
@@ -68,7 +75,7 @@ solving terms are `solver.allium`'s, and the terms of a person solving are
 | Microstep | One paid action such as attending, inspecting a fact, rehearsing, inferring, writing a note or committing a digit. An unsuccessful action is still recorded. |
 | Fact, belief | One proposition acquired or derived by the simulated person. It has provenance and confidence and can be false; a coverage assertion does not contain all the facts it summarizes. |
 | Chunk | A bounded group of learned, recognized facts occupying one working-memory slot. Arbitrary bundles do not qualify. |
-| Note, entry | In `human-solving.allium`: one cell's written marks together with a claim of coverage, and a digit standing on the sheet, given or written by the player. A mark is still one written candidate. |
+| Note, entry | In `human-solving.allium`: one cell's written marks together with a claim of coverage, and a digit standing on the sheet, given or written by the player. A mark is still one written candidate. On the board a note is one cell's marks alone, shown while the cell is empty and waiting beneath a digit otherwise. |
 | Sheet | Actual entries, external candidate notes and deliberately written branch records, separate from mental beliefs and observer knowledge. |
 | Coverage | An assertion that all alternatives of one cell, or all positions for one digit in a unit, were checked. Missing partial notes do not establish coverage. |
 | Observer | The independent evaluator that can inspect full traces and solution truth; its judgements do not steer the simulated person. |
