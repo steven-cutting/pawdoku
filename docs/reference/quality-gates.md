@@ -82,7 +82,7 @@ configuration, and it is the one installed as the pre-commit hook.
 
 | Hook | Checks |
 | --- | --- |
-| `ruff-check`, `ruff-format-check` | Any Python file the game adds; none ships. |
+| `ruff-check`, `ruff-format-check` | Any Python file the game adds: today the model of `board.allium` under `prototypes/`, which `just proto-typecheck` also holds under `mypy --strict`. |
 | `editorconfig-checker` | Whitespace, line endings, final newlines. |
 | `eslint` | ESLint and `prettier --check` across the application, the stories, and the workshop configuration. |
 | `validate-docs`, `validate-agents` | The two contracts, so a hook catches them before the aggregate does. |

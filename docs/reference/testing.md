@@ -111,6 +111,7 @@ should be deleted rather than covered; see
 | `platformSpecs.test.ts` | The six figures `src/lib/config.ts` mirrors, held equal to the modules `@steven-cutting/biscuit-games` ships and to any module under `docs/specs/` that states them; and every clause `tests/restated.ts` lists, held to the platform's text word for word. |
 | `lockup.test.ts` | That the lockup names this game after the platform, with the mark silent. This game's file. |
 | `route.test.ts` | The page: the heading the platform header draws for this game, and a main landmark to put the game in. This game's file. |
+| `prototypes/board/tests/` | The Python model of `board.allium`, in pytest: `sudoku.allium`'s setting and play rules, one scenario per guarantee of the Playing surface with the board rendered as text into an inline snapshot after each step, the Recording contract, and every named invariant of both modules held after every stimulus, except the two that `just proto-typecheck` proves from the types. A model of the specification, not a test of the application. |
 | `stories/` | Each component rendered in every state its surface names, in Chromium with axe over every one, and the figures only a layout engine can produce: the seed story frames the header at the narrowest supported width and measures every control there. |
 
 ## Related pages

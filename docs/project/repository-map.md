@@ -31,6 +31,7 @@ there is no backend to be a sibling of.
 ├── stories/             Svelte CSF stories, one per component
 ├── static/              Copied verbatim into the build
 ├── scripts/             The first-run script and the browser preflight
+├── prototypes/          Executable models of specifications, in Python; never built
 ├── docs/                This handbook, plus specs/
 ├── .agents/skills/      Canonical agent procedures
 └── .storybook/          The component workshop, served and built locally
@@ -49,6 +50,7 @@ there is no backend to be a sibling of.
 | `stories/` | Every state of a component, as something that can be looked at. Rendered in Chromium with axe over each. |
 | `scripts/` | `initialize.sh` and `check_playwright_browsers.js`. The two validators, the allium installer and runner, the gate runner and the ripsecrets wrapper are console scripts of `biscuit-games-tooling`, pinned in `pyproject.toml`. |
 | `docs/specs/` | The Allium specifications. Behaviour is decided here, not in code. |
+| `prototypes/` | A specification made executable so it can be exercised before the application implements it: `board/` models `board.allium` in Python with attrs, its cells typed values under `mypy --strict`, with pytest scenarios that render the board as text. Gated by `just proto-typecheck` and `just proto-test`; imported by nothing. |
 | `.storybook/` | The workshop's configuration. Served locally, and built both by the gate, which discards it, and by `just chromatic`, which publishes it. |
 
 Which of these may import which is not a matter of taste; see

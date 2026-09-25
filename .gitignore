@@ -3,6 +3,9 @@
 __pycache__/
 *.py[cod]
 .ruff_cache/
+.pytest_cache/
+.inline-snapshot/
+.mypy_cache/
 .cache/
 .lycheecache
 .env

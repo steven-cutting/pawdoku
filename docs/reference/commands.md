@@ -44,6 +44,7 @@ rather than in a shell history.
 | Recipe | Purpose |
 | --- | --- |
 | `just format` | Ruff and Prettier, writing. |
+| `just proto-accept` | Rewrite the prototype's inline snapshots to what the model now renders. Read the diff first: the renderings are the review. |
 | `just fix` | The mutating hook set, then ESLint autofix and Prettier, then `just lint`. The recipe that repairs what a check reports. Not the only one that writes: `just format`, `just initialize` and the lock recipes do too, and none of them is a check. |
 
 ## Check
@@ -57,6 +58,8 @@ rather than in a shell history.
 | `just frontend-build` | Production build. Honours `BASE_PATH`. |
 | `just storybook-build` | Build the workshop into `storybook-static/`. Ignored by Git; this build is discarded, and `just chromatic` is what publishes one. Reaches the network for the platform's workshop, and cannot fail on it. |
 | `just storybook-test` | Every story in real Chromium: axe over each render, play functions as interaction tests. |
+| `just proto-typecheck` | The prototype under `mypy --strict`. Its cells are typed values, and a given cell's type has no move to take, so two of the spec's invariants are proved here rather than held at run time. |
+| `just proto-test` | The Python model of `board.allium` under `prototypes/`, in pytest. Changed renderings are accepted, after reading them, by `just proto-accept`. |
 
 ## Documents and agents
 
